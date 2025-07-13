@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="az">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sürücünün Bütün Sifarişləri</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        form {
+            max-width: 500px;
+            margin: 20px auto;
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #ordersContainer {
+            max-width: 800px;
+            margin: 30px auto;
+        }
+
+        .siparis {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .siparis h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #444;
+        }
+
+        .status {
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .status.alindi {
+            color: #4CAF50;
+            /* Yaşıl */
+        }
+
+        .status.alinmadi {
+            color: #777;
+            /* Boz */
+        }
+
+        .buttons {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 8px 15px;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button.sil {
+            background-color: #f44336;
+            /* Qırmızı */
+            color: white;
+        }
+
+        button.sil:hover {
+            background-color: #da190b;
+        }
+
+        button.durum {
+            background-color: #2196F3;
+            /* Mavi */
+            color: white;
+        }
+
+        button.durum:hover {
+            background-color: #0b7dda;
+        }
+
+        #orderCount {
+            text-align: center;
+            font-size: 1.2em;
+            margin-top: 10px;
+            color: #555;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Sürücünün Bütün Sifarişləri</h1>
+    <form id="searchForm">
+        <input type="text" value="65e4933a1e3f26046e73a005" id="driverIdInput" placeholder="Sürücü ID'sini daxil edin"
+            required />
+        <button type="submit">Sifarişləri Götür</button>
+    </form>
+
+    <div id="orderCount"></div>
+    <div id="ordersContainer"></div>
+
+
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            // Changed from userId to driverIdInput
+            const driverId = document.getElementById('driverIdInput').value;
+            const ordersContainer = document.getElementById('ordersContainer');
+            const orderCountDisplay = document.getElementById('orderCount');
+            ordersContainer.innerHTML = ''; // Clear previous orders
+            orderCountDisplay.innerHTML = ''; // Clear previous count
+
+            // Changed the endpoint to /api/taxis/get-driver-orders
+            const response = await fetch(`/api/taxis/get-driver-orders?driverId=${driverId}`);
+            const orders = await response.json();
+
+            if (orders.length === 0 || response.status !== 200) {
+                ordersContainer.innerHTML = '<p style="text-align:center;">Bu sürücüyə aid sifarişlər tapılmadı.</p>';
+                orderCountDisplay.innerHTML = `<p>Toplam sifariş sayı: 0</p>`;
+                return;
+            }
+
+            orderCountDisplay.innerHTML = `<p>Toplam sifariş sayı: ${orders.length}</p>`;
+
+            orders.forEach(order => {
+                const div = document.createElement('div');
+                div.className = 'siparis';
+
+                const statusText = order.isTaken ? 'Alınıb' : 'Alınmayıb';
+                const statusClass = order.isTaken ? 'alindi' : 'alinmadi';
+
+                const driverInfo = order.driverDetails ? `
+                    <p><strong>Sürücü Adı:</strong> ${order.driverDetails.firstName || 'Bilinmir'}</p>
+                    <p><strong>Avtomobil Nömrəsi:</strong> ${order.driverDetails.carPlate || 'Bilinmir'}</p>
+                ` : `<p><strong>Sürücü:</strong> Atanmayıb</p>`;
+
+                // <h3>Sifariş ID: ${order._id}</h3>
+                div.innerHTML = `
+                    <p><strong>Ünvan:</strong> ${order.currentAddress.text}</p>
+                    <p><strong>Hədəf:</strong> ${order.destinationAddress.text}</p>
+                    <p><strong>Hədəf 2:</strong> ${order.destination2 ? order.destination2.text : 'Yoxdur'}</p>
+                    ${driverInfo}
+                    <p class="status ${statusClass}"><strong>Vəziyyət:</strong> ${statusText}</p>
+                    <p><strong>İş vəziyyəti:</strong> ${order.isFinished ? 'Tamamlandı' : 'Davam edir'}</p>
+                    <div class="buttons">
+                        <button class="sil" onclick="sil('${order._id}')">Sil</button>
+                        <button class="durum" onclick="yenilə('${order._id}', false, false)">İşTakeni false və Tamamla</button>
+                        ${order.isTaken && !order.isConfirmed ? `<button class="confirm" onclick="tesdiqle('${order._id}')">Təsdiqlə</button>` : ''}
+                    </div>
+                `;
+                ordersContainer.appendChild(div);
+            });
+        });
+
+
+        // Existing functions (sil, yenilə, tesdiqle) remain the same
+        async function sil(orderId) {
+            const response = await fetch('/api/taxis/request', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ requestId: orderId })
+            });
+            if (response.ok) {
+                alert('Sifariş silindi.');
+                document.getElementById('searchForm').dispatchEvent(new Event('submit'));
+            } else {
+                alert('Silme uğursuz oldu.');
+            }
+        }
+
+        async function yenilə(orderId, isTaken, isFinished) {
+            const response = await fetch('/api/taxis/updateOrderStatus', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ requestId: orderId, isTaken, isFinished })
+            });
+            if (response.ok) {
+                alert('Vəziyyət yeniləndi.');
+                document.getElementById('searchForm').dispatchEvent(new Event('submit'));
+            } else {
+                alert('Yeniləmə uğursuz oldu.');
+            }
+        }
+
+        async function tesdiqle(orderId) {
+            const response = await fetch('/api/taxis/updateConfirmStatus', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ requestId: orderId, isConfirmed: true })
+            });
+            if (response.ok) {
+                alert('Sifariş təsdiqləndi.');
+                document.getElementById('searchForm').dispatchEvent(new Event('submit'));
+            } else {
+                alert('Təsdiqləmə uğursuz oldu.');
+            }
+        }
+    </script>
+</body>
+
+</html>

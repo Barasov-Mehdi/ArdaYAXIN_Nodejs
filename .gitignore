@@ -1,0 +1,6 @@
+# Özel dosyalar
+serviceAccountKey.json
+.env
+
+# Bağımlılıklar
+node_modules/

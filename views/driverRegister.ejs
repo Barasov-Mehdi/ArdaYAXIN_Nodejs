@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sürücü qeydiyyatı</title>
+    <link rel="stylesheet" href="/styles.css"> <!-- CSS dosyası yolu (isterseniz ekleyin) -->
+</head>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+    }
+
+    .container {
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 20px;
+        background: white;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+        text-align: center;
+    }
+
+    form div {
+        margin-bottom: 15px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    button {
+        width: 100%;
+        padding: 10px;
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background-color: #218838;
+    }
+</style>
+
+<body>
+    <div class="container">
+        <h1>Sürücü qeydiyyatı</h1>
+        <form action="/api/drivers/register" method="POST">
+            <div>
+                <label for="firstName">Ad</label>
+                <input type="text" name="firstName" required>
+            </div>
+            <div>
+                <label for="lastName">Soyad</label>
+                <input type="text" name="lastName" required>
+            </div>
+            <div>
+                <label for="phone">Telefon</label>
+                <input type="text" name="phone" required>
+            </div>
+            <div>
+                <label for="carPlate">Maşin nömrəsi</label>
+                <input type="text" name="carPlate" required>
+            </div>
+            <div>
+                <label for="carModel">Maşın Modeli</label>
+                <input type="text" name="carModel" required>
+            </div>
+            <div>
+                <label for="carColor">Maşın Rəngi</label>
+                <input type="text" name="carColor" required>
+            </div>
+            <div>
+                <label for="email">Email</label>
+                <input type="email" name="email" required>
+            </div>
+            <div>
+                <label for="password">Şifrə</label>
+                <input type="password" name="password" required>
+            </div>
+            <button type="submit">Əlavə et</button>
+        </form>
+    </div>
+</body>
+
+</html>

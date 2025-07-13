@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yardım Talepleri</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .help-item {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .help-item h3 {
+            margin-top: 0;
+            margin-bottom: 5px;
+            color: #007bff;
+        }
+        .help-item p {
+            margin-bottom: 5px;
+            line-height: 1.5;
+        }
+        .help-item strong {
+            margin-right: 5px;
+        }
+        .no-messages {
+            text-align: center;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Gələn Yardım Mesajları</h1>
+
+        <% if (helpRequests && helpRequests.length > 0) { %>
+            <% helpRequests.forEach(function(request) { %>
+                <div class="help-item">
+                    <h3><%= request.firstLname %></h3>
+                    <p><strong>Telefon:</strong> <%= request.phone %></p>
+                    <p><strong>Email:</strong> <%= request.email %></p>
+                    <p><strong>Mesaj:</strong> <%= request.helpText %></p>
+                    <% if (request._id) { %>
+                         <!-- İsteğe bağlı: Talebin ID'sini gösterme -->
+                         <!-- <p><strong>ID:</strong> <%= request._id %></p> -->
+                    <% } %>
+                </div>
+            <% }); %>
+        <% } else { %>
+            <p class="no-messages">Henüz bir yardım talebi bulunmamaktadır.</p>
+        <% } %>
+
+    </div>
+</body>
+</html>

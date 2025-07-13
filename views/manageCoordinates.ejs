@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Coordinates</title>
+    <link rel="stylesheet" href="/assets/style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            color: #0056b3;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .search-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .search-container input[type="text"] {
+            width: 70%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .search-container button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+            font-size: 16px;
+        }
+        .search-container button:hover {
+            background-color: #0056b3;
+        }
+        .coordinate-list {
+            list-style: none;
+            padding: 0;
+        }
+        .coordinate-item {
+            background: #f9f9f9;
+            border: 1px solid #e1e1e1;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 5px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .coordinate-info {
+            flex-grow: 1;
+            margin-right: 20px;
+        }
+        .coordinate-info h3 {
+            margin: 0 0 5px 0;
+            color: #333;
+        }
+        .coordinate-info p {
+            margin: 0;
+            color: #666;
+            font-size: 0.9em;
+        }
+        .coordinate-actions button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-left: 8px;
+            transition: background-color 0.2s ease;
+        }
+        .coordinate-actions .edit-btn {
+            background-color: #ffc107;
+            color: white;
+        }
+        .coordinate-actions .edit-btn:hover {
+            background-color: #e0a800;
+        }
+        .coordinate-actions .delete-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+        .coordinate-actions .delete-btn:hover {
+            background-color: #c82333;
+        }
+        .edit-form {
+            display: none; /* Gizli form */
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .edit-form label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .edit-form input[type="text"],
+        .edit-form input[type="number"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .edit-form button {
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .edit-form button:hover {
+            background-color: #218838;
+        }
+        .edit-form .cancel-btn {
+            background-color: #6c757d;
+        }
+        .edit-form .cancel-btn:hover {
+            background-color: #5a6268;
+        }
+        .message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Manage Coordinates</h1>
+
+        <div class="search-container">
+            <input type="text" id="searchAddress" placeholder="Search by Address Name">
+            <button onclick="searchCoordinates()">Search</button>
+        </div>
+
+        <ul id="coordinateList" class="coordinate-list">
+            <% if (coordinates && coordinates.length > 0) { %>
+                <% coordinates.forEach(coordinate => { %>
+                    <li class="coordinate-item" data-id="<%= coordinate._id %>">
+                        <div class="coordinate-info">
+                            <h3><%= coordinate.addressName %></h3>
+                            <p>Latitude: <%= coordinate.latitude %>, Longitude: <%= coordinate.longitude %></p>
+                        </div>
+                        <div class="coordinate-actions">
+                            <button class="edit-btn" onclick="showEditForm(this)">Edit</button>
+                            <button class="delete-btn" onclick="deleteCoordinate('<%= coordinate._id %>')">Delete</button>
+                        </div>
+                        <div class="edit-form">
+                            <form onsubmit="event.preventDefault(); updateCoordinate(this, '<%= coordinate._id %>');">
+                                <label for="editAddressName_<%= coordinate._id %>">Address Name:</label>
+                                <input type="text" id="editAddressName_<%= coordinate._id %>" value="<%= coordinate.addressName %>" required>
+
+                                <label for="editLatitude_<%= coordinate._id %>">Latitude:</label>
+                                <input type="number" id="editLatitude_<%= coordinate._id %>" value="<%= coordinate.latitude %>" step="any" required>
+
+                                <label for="editLongitude_<%= coordinate._id %>">Longitude:</label>
+                                <input type="number" id="editLongitude_<%= coordinate._id %>" value="<%= coordinate.longitude %>" step="any" required>
+
+                                <button type="submit">Update</button>
+                                <button type="button" class="cancel-btn" onclick="hideEditForm(this)">Cancel</button>
+                            </form>
+                        </div>
+                    </li>
+                <% }); %>
+            <% } else { %>
+                <p>No coordinates found.</p>
+            <% } %>
+        </ul>
+
+        <div id="messageContainer" class="message" style="display: none;"></div>
+    </div>
+
+    <script>
+        function showMessage(type, text) {
+            const messageContainer = document.getElementById('messageContainer');
+            messageContainer.textContent = text;
+            messageContainer.className = `message ${type}`;
+            messageContainer.style.display = 'block';
+            setTimeout(() => {
+                messageContainer.style.display = 'none';
+            }, 3000); // Hide after 3 seconds
+        }
+
+        function showEditForm(button) {
+            const listItem = button.closest('.coordinate-item');
+            const editForm = listItem.querySelector('.edit-form');
+            editForm.style.display = 'block';
+            button.style.display = 'none'; // Hide edit button when form is shown
+        }
+
+        function hideEditForm(button) {
+            const listItem = button.closest('.coordinate-item');
+            const editForm = listItem.querySelector('.edit-form');
+            const editButton = listItem.querySelector('.edit-btn');
+            editForm.style.display = 'none';
+            editButton.style.display = 'inline-block'; // Show edit button again
+        }
+
+        async function updateCoordinate(form, id) {
+            const addressName = form.querySelector(`#editAddressName_${id}`).value;
+            const latitude = form.querySelector(`#editLatitude_${id}`).value;
+            const longitude = form.querySelector(`#editLongitude_${id}`).value;
+
+            try {
+                const response = await fetch(`/api/coordinates/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ addressName, latitude, longitude })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('success', data.message);
+                    // Update the displayed information
+                    const listItem = form.closest('.coordinate-item');
+                    listItem.querySelector('h3').textContent = addressName;
+                    listItem.querySelector('p').textContent = `Latitude: ${latitude}, Longitude: ${longitude}`;
+                    hideEditForm(form.querySelector('.cancel-btn')); // Hide the form after successful update
+                } else {
+                    showMessage('error', data.error || data.message || 'Failed to update coordinate.');
+                }
+            } catch (error) {
+                showMessage('error', 'An error occurred while updating the coordinate.');
+                console.error('Error updating coordinate:', error);
+            }
+        }
+
+        async function deleteCoordinate(id) {
+            if (!confirm('Are you sure you want to delete this coordinate?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/coordinates/${id}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('success', data.message);
+                    document.querySelector(`.coordinate-item[data-id="${id}"]`).remove();
+                } else {
+                    showMessage('error', data.error || data.message || 'Failed to delete coordinate.');
+                }
+            } catch (error) {
+                showMessage('error', 'An error occurred while deleting the coordinate.');
+                console.error('Error deleting coordinate:', error);
+            }
+        }
+
+        function searchCoordinates() {
+            const searchTerm = document.getElementById('searchAddress').value.toLowerCase();
+            const coordinateItems = document.querySelectorAll('.coordinate-item');
+
+            coordinateItems.forEach(item => {
+                const addressName = item.querySelector('h3').textContent.toLowerCase();
+                if (addressName.includes(searchTerm)) {
+                    item.style.display = 'flex'; // Show matching items
+                } else {
+                    item.style.display = 'none'; // Hide non-matching items
+                }
+            });
+        }
+
+        // Initial search to display all if search box is empty
+        document.addEventListener('DOMContentLoaded', () => {
+            searchCoordinates(); // Display all coordinates on page load
+        });
+
+        // Optional: Add event listener for real-time search as user types
+        document.getElementById('searchAddress').addEventListener('keyup', searchCoordinates);
+
+    </script>
+</body>
+</html>

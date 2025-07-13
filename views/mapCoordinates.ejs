@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Addresses on Map</title>
+    <!-- Harita stilizasyonu için Leaflet CSS -->
+    <!-- HATA DÜZELTME: integrity ve crossorigin nitelikleri kaldırıldı -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <!-- Leaflet JavaScript - Leaflet'in CSS'inden sonra yerleştirilmelidir -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Temel stilizasyon için Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- HATA AYIKLAMA: Bu betik bloğunun yürütüldüğünü kontrol edin -->
+    <script>
+        console.log("EJS betik bloğu başlatıldı.");
+    </script>
+    <style>
+        /* Harita kapsayıcısının tam yüksekliği almasını sağlayın */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: "Inter", sans-serif; /* Inter yazı tipini kullanın */
+        }
+        #map-container { /* Harita ve yükleme ekranı için yeni bir kapsayıcı */
+            height: calc(100vh - 120px - 70px); /* Üst ve alt öğeler ile arama çubuğu için boşluk bırakın */
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #e2e8f0; /* Açık gri arka plan */
+            border-radius: 0.75rem; /* Yuvarlatılmış köşeler */
+            overflow: hidden; /* İçeriğin taşmasını engelle */
+            position: relative; /* Yükleme göstergesi için */
+        }
+        #map {
+            height: 100%; /* Kapsayıcının tüm yüksekliğini al */
+            width: 100%;
+            border-radius: inherit; /* Kapsayıcıdan köşeleri miras al */
+        }
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            border-radius: inherit;
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #3b82f6; /* Tailwind blue-500 */
+            animation: spin 1s ease infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error-message {
+            background-color: #fee2e2; /* Tailwind red-100 */
+            border: 1px solid #fca5a5; /* Tailwind red-400 */
+            color: #ef4444; /* Tailwind red-700 */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            max-width: 4xl; /* CSS düzeltildi */
+            width: 100%;
+            text-align: center;
+        }
+        .warning-message {
+            background-color: #fffbeb; /* Tailwind yellow-100 */
+            border: 1px solid #fcd34d; /* Tailwind yellow-400 */
+            color: #d97706; /* Tailwind yellow-700 */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            max-width: 4xl; /* CSS düzeltildi */
+            width: 100%;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center p-4">
+    <header class="w-full max-w-4xl bg-white p-4 rounded-lg shadow-md mb-4 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-gray-800">Adres Harita Görüntüleyici</h1>
+        <a href="/add-coordinates" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition duration-300 ease-in-out rounded-xl">
+            Yeni Koordinat Ekle
+        </a>
+    </header>
+
+    <main class="w-full max-w-4xl bg-white p-4 rounded-lg shadow-md flex flex-col items-center">
+        <!-- Arama Çubuğu Eklendi -->
+        <div class="w-full flex items-center justify-center mb-4">
+            <input type="text" id="searchInput" placeholder="Adres adına göre ara..."
+                   class="flex-grow p-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl">
+            <button id="searchButton"
+                    class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-r-lg shadow-sm transition duration-300 ease-in-out rounded-xl">
+                Ara
+            </button>
+        </div>
+
+        <div id="map-container" class="rounded-xl border border-gray-300">
+            <div id="map"></div>
+            <div id="loading-overlay" class="loading-overlay">
+                <div class="spinner"></div>
+            </div>
+        </div>
+        <div id="map-message" class="hidden"></div> <!-- Harita mesajları için -->
+    </main>
+
+    <footer class="w-full max-w-4xl text-center text-gray-600 text-sm mt-4">
+        <p>&copy; <%= new Date().getFullYear() %> Şirket Adınız. Tüm Hakları Saklıdır.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const mapContainer = document.getElementById('map-container');
+            const mapElement = document.getElementById('map');
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const mapMessageDiv = document.getElementById('map-message');
+            const searchInput = document.getElementById('searchInput');
+            const searchButton = document.getElementById('searchButton');
+
+            let map; // Harita nesnesi
+            let allMarkers = []; // Tüm işaretçileri depolayacak dizi
+            let allCoordinates = []; // Tüm API koordinatlarını depolayacak dizi
+
+            console.log('DOMContentLoaded tetiklendi.'); // HATA AYIKLAMA: DOM içeriği yüklendiğinde
+
+            // Harita mesajını göster
+            function showMapMessage(message, type = 'info') { // 'info', 'warning', 'error'
+                mapMessageDiv.textContent = message;
+                mapMessageDiv.classList.remove('hidden', 'error-message', 'warning-message', 'bg-blue-100', 'border-blue-400', 'text-blue-700'); // info için de temizle
+                if (type === 'error') {
+                    mapMessageDiv.classList.add('error-message');
+                } else if (type === 'warning') {
+                    mapMessageDiv.classList.add('warning-message');
+                } else {
+                    mapMessageDiv.classList.add('bg-blue-100', 'border-blue-400', 'text-blue-700', 'px-4', 'py-3', 'rounded', 'relative', 'mt-4', 'max-w-4xl', 'w-full'); // Bilgi mesajı stili
+                }
+            }
+
+            // Leaflet yüklendi mi kontrol et
+            if (typeof L === 'undefined') {
+                loadingOverlay.classList.add('hidden'); // Yükleme ekranını gizle
+                showMapMessage('Harita kütüphanesi yüklenemedi. Lütfen internet bağlantınızı kontrol edin veya tarayıcı konsolundaki ağ hatalarına bakın.', 'error');
+                console.error('Leaflet kütüphanesi yüklenmedi. L nesnesi tanımlanmamış. Bu, Leaflet JS dosyasının yüklenemediğini veya yürütülemediğini gösterir.');
+                return;
+            } else {
+                console.log('Leaflet kütüphanesi başarıyla yüklendi (L nesnesi tanımlı).');
+            }
+
+            // Harita başlatma fonksiyonu
+            function initializeMap() {
+                if (map) { // Harita zaten başlatılmışsa, mevcut örneği kullan
+                    map.remove(); // Önceki harita örneğini kaldır
+                }
+                // Haritayı başlat
+                // Varsayılan görünüm: Bakü, Azerbaycan'ın merkezi
+                map = L.map('map').setView([40.4093, 49.8671], 10); // Örnek: Bakü, Azerbaycan, daha yakın bir zoom seviyesi
+
+                // OpenStreetMap katmanlarını ekle
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> katkıda bulunanları'
+                }).addTo(map);
+
+                // Düzen sorunları durumunda haritanın boyutunu yeniden değerlendirmesini zorla
+                map.invalidateSize();
+                console.log('Harita başlatıldı ve invalidateSize() çağrıldı.');
+            }
+
+            // Koordinatları yükleme ve işaretçileri ekleme fonksiyonu
+            async function loadCoordinatesAndAddMarkers() {
+                loadingOverlay.classList.remove('hidden'); // Yükleme ekranını göster
+                showMapMessage('', 'info'); // Önceki mesajı temizle
+
+                try {
+                    // Koordinatları API uç noktasından çek
+                    console.log('API\'den koordinatlar çekiliyor: ' + window.location.origin + '/api/coordinates');
+                    const response = await fetch(window.location.origin + '/api/coordinates');
+                    if (!response.ok) {
+                        throw new Error(`HTTP hatası! Durum: ${response.status}`);
+                    }
+                    allCoordinates = await response.json(); // Tüm koordinatları depola
+                    console.log('API yanıtı alındı:', allCoordinates);
+
+                    // Mevcut işaretçileri temizle
+                    allMarkers.forEach(marker => marker.remove());
+                    allMarkers = [];
+
+                    if (allCoordinates.length > 0) {
+                        const bounds = new L.LatLngBounds(); // Tüm işaretçileri sığdırmak için LatLngBounds nesnesi oluştur
+                        let validCoordsFound = false;
+
+                        allCoordinates.forEach(coord => {
+                            const { addressName, latitude, longitude } = coord;
+                            // Geçerli enlem ve boylam değerlerini kontrol et
+                            if (typeof latitude === 'number' && typeof longitude === 'number' &&
+                                !isNaN(latitude) && !isNaN(longitude) &&
+                                latitude >= -90 && latitude <= 90 && // Enlem geçerlilik kontrolü
+                                longitude >= -180 && longitude <= 180) { // Boylam geçerlilik kontrolü
+                                
+                                console.log(`İşaretçi ekleniyor: ${addressName} (${latitude}, ${longitude})`);
+                                const marker = L.marker([latitude, longitude]).addTo(map)
+                                    .bindPopup(`<b>${addressName}</b><br>Enlem: ${latitude}<br>Boylam: ${longitude}`);
+                                
+                                marker.addressName = addressName; // Arama için adres adını işaretçiye ekle
+                                allMarkers.push(marker); // İşaretçiyi depola
+                                bounds.extend([latitude, longitude]);
+                                validCoordsFound = true;
+                            } else {
+                                console.warn(`Geçersiz koordinat bulundu ve atlandı: ${addressName || 'Bilinmiyor'} (Enlem: ${latitude}, Boylam: ${longitude})`);
+                            }
+                        });
+
+                        if (validCoordsFound && bounds.isValid()) {
+                            // Haritayı tüm işaretçilerin sınırlarına sığdır, biraz boşluk ekle
+                            map.fitBounds(bounds, { padding: [50, 50] });
+                            console.log('Harita, tüm geçerli koordinatları kapsayacak şekilde ayarlandı.');
+                            showMapMessage('Tüm adresler haritada başarıyla işaretlendi.', 'info');
+                        } else {
+                            // Hiç geçerli işaretçi yoksa varsayılan görünüme geri dön
+                            console.warn('Hiç geçerli koordinat bulunamadı veya tüm koordinatlar geçersizdi. Varsayılan Bakü görünümüne dönülüyor.');
+                            map.setView([40.4093, 49.8671], 10);
+                            showMapMessage('Gösterilecek geçerli adres bulunamadı. Lütfen koordinat eklediğinizden ve bunların geçerli enlem/boylam değerlerine sahip olduğundan emin olun.', 'warning');
+                        }
+                    } else {
+                        console.log('API\'den gösterilecek koordinat bulunamadı.');
+                        map.setView([40.4093, 49.8671], 10); // Koordinat yoksa varsayılan görünüme geri dön
+                        showMapMessage('Henüz haritada gösterilecek adres bulunamadı. Yeni koordinatlar ekleyebilirsiniz.', 'info');
+                    }
+                } catch (error) {
+                    console.error('Koordinatları çekerken veya görüntülerken hata oluştu:', error);
+                    // Kullanıcıya bir hata mesajı göster
+                    showMapMessage(`Harita verileri yüklenemedi: ${error.message}. Lütfen daha sonra tekrar deneyin veya sunucu loglarını kontrol edin.`, 'error');
+                    // Harita başlatılmışsa, üzerinde bir hata mesajı da gösterebiliriz
+                    if (map) {
+                         L.marker([40.4093, 49.8671])
+                            .bindPopup('Harita verileri yüklenirken bir hata oluştu.')
+                            .addTo(map);
+                    }
+                } finally {
+                    // Yükleme ekranını gizle
+                    loadingOverlay.classList.add('hidden');
+                    console.log('Yükleme ekranı gizlendi.');
+                }
+            }
+
+            // Arama fonksiyonu
+            function searchAddress() {
+                const searchTerm = searchInput.value.trim().toLowerCase();
+                if (searchTerm === '') {
+                    showMapMessage('Lütfen aranacak bir adres adı girin.', 'warning');
+                    // Arama kutusu boşsa tüm işaretçileri göster ve haritayı tüm sınırlara sığdır
+                    loadCoordinatesAndAddMarkers(); // Tüm koordinatları yeniden yükle ve işaretle
+                    return;
+                }
+
+                const foundMarkers = [];
+                // Tüm işaretçileri haritadan kaldır
+                allMarkers.forEach(marker => marker.remove());
+
+                // Eşleşen işaretçileri bul ve foundMarkers dizisine ekle
+                for (const marker of allMarkers) {
+                    if (marker.addressName && marker.addressName.toLowerCase().includes(searchTerm)) {
+                        foundMarkers.push(marker);
+                    }
+                }
+
+                if (foundMarkers.length > 0) {
+                    const bounds = new L.LatLngBounds();
+                    foundMarkers.forEach(marker => {
+                        marker.addTo(map); // Eşleşen işaretçiyi haritaya ekle
+                        bounds.extend(marker.getLatLng()); // Sınırları güncelle
+                    });
+
+                    // Haritayı bulunan işaretçilerin tümünü kapsayacak şekilde ayarla
+                    map.fitBounds(bounds, { padding: [50, 50] });
+
+                    showMapMessage(`${foundMarkers.length} adres bulundu.`, 'info');
+                } else {
+                    showMapMessage(`"${searchTerm}" adresi bulunamadı.`, 'warning');
+                    // Eğer arama başarısız olursa, haritayı varsayılan Azerbaycan görünümüne geri döndür
+                    map.setView([40.4093, 49.8671], 10);
+                }
+            }
+
+            // Arama butonuna tıklama olayını dinle
+            searchButton.addEventListener('click', searchAddress);
+
+            // Arama kutusunda Enter tuşuna basıldığında aramayı tetikle
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    searchAddress();
+                }
+            });
+
+            // Haritayı başlat ve koordinatları yükle
+            initializeMap();
+            loadCoordinatesAndAddMarkers();
+        });
+    </script>
+</body>
+</html>

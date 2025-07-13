@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arda Taksi</title>
+    <link rel="stylesheet" href="/styles.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f4f8;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            line-height: 1.6;
+            /* Okunabilirliği artırır */
+        }
+
+        header {
+            background: #35424a;
+            color: #ffffff;
+            padding: 20px 0;
+            /* Üst ve alttan boşluk, yanlardan boşluk yok */
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        nav ul li {
+            display: inline-block;
+            /* Inline-block ile daha esnek yatay sıralama */
+            margin: 0 10px;
+            /* Yatay boşlukları azaltıyoruz */
+        }
+
+        nav ul li a {
+            color: #ffffff;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            transition: background 0.3s;
+            display: block;
+            /* Tüm link alanını tıklanabilir yapar */
+        }
+
+        nav ul li a:hover {
+            background: #e8491d;
+        }
+
+        .flex-container {
+            display: flex;
+            /* Küçük ekranlarda alt alta geçmesini sağlar */
+            justify-content: center;
+            /* Öğeleri merkezler */
+            gap: 20px;
+            /* Flex öğeleri arasında boşluk */
+            margin: 20px auto;
+            /* Üst ve alttan boşluk, yanlardan otomatik (merkezleme) */
+            max-width: 1200px;
+            /* Maksimum genişlik belirleyerek çok geniş ekranlarda dağılmasını engeller */
+            padding: 0 20px;
+            /* Yanlardan padding ekleyerek içeriğin kenarlara yapışmasını engeller */
+        }
+
+        .container1,
+        .container2,
+        .update-limit {
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            box-sizing: border-box;
+            /* Padding'in genişliğe dahil olmasını sağlar */
+            flex: 1 1 300px;
+            /* Esnek büyüme ve küçülme, minimum genişlik 300px */
+            max-width: 100%;
+            /* Kendi içinde maksimum genişlik */
+        }
+
+        .container1 {
+            flex-basis: 500px;
+            /* Tercih edilen başlangıç genişliği */
+            max-width: 100%;
+            /* Küçük ekranlarda 100% genişlik */
+        }
+
+        .container2 {
+            flex-basis: 300px;
+            /* Tercih edilen başlangıç genişliği */
+            max-width: 100%;
+            /* Küçük ekranlarda 100% genişlik */
+        }
+
+        .update-limit {
+            flex-basis: 300px;
+            /* Tercih edilen başlangıç genişliği */
+            max-width: 100%;
+            /* Küçük ekranlarda 100% genişlik */
+            margin-top: 0;
+            /* Flex container içindeyken üst boşluğa gerek yok */
+        }
+
+
+        h2,
+        h3 {
+            color: #35424a;
+            text-align: center;
+            /* Başlıkları merkezler */
+            margin-top: 0;
+            /* Üst boşluğu kaldırır */
+        }
+
+        .order-item {
+            border: 1px solid #e8491d;
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            transition: background 0.3s;
+            word-wrap: break-word;
+            /* Uzun kelimelerin satır atlamasını sağlar */
+        }
+
+        .order-item:hover {
+            background-color: #f1f1f1;
+        }
+
+        #orderList {
+            height: 350px;
+            overflow-y: auto;
+            padding: 10px;
+            border: 1px solid #dddddd;
+            border-radius: 5px;
+            background-color: #ffffff;
+        }
+
+        .order-item p {
+            margin: 5px 0;
+        }
+
+        #driverList {
+            height: 250px;
+            overflow-y: auto;
+            /* Scroll yerine auto kullanmak daha iyidir */
+            border: 1px solid #e8491d;
+            padding: 10px;
+            background-color: #ffffff;
+            /* Arka plan rengi eklenmiş */
+        }
+
+        .update-limit label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+
+        .update-limit input[type="number"],
+        .update-limit select {
+            width: 100%;
+            /* Genişliği %100 yapar */
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            /* Padding'in genişliğe dahil olmasını sağlar */
+        }
+
+        #updateLimitButton {
+            background: #e8491d;
+            color: #ffffff;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+            width: 100%;
+            /* Genişliği %100 yapar */
+        }
+
+        #updateLimitButton:hover {
+            background: #d7361b;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            background: #35424a;
+            color: #ffffff;
+            width: 100%;
+            margin-top: 30px;
+            /* Flex container ile footer arasına boşluk */
+        }
+
+        footer p {
+            margin: 0;
+        }
+
+        .driver-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding-bottom: 5px;
+            /* Alt çizgi için boşluk */
+            border-bottom: 1px dashed #eee;
+            /* Ayırıcı çizgi */
+        }
+
+        .driver-item:last-child {
+            border-bottom: none;
+            /* Son öğede çizgi olmasın */
+        }
+
+        /* Medya Sorguları */
+        @media (max-width: 768px) {
+            nav ul li {
+                display: block;
+                /* Küçük ekranlarda menü öğeleri alt alta */
+                margin: 10px 0;
+                /* Dikey boşluk ekle */
+            }
+
+            nav ul {
+                padding: 10px 0;
+                /* Menüye üst/alt padding ekle */
+            }
+
+            .flex-container {
+                flex-direction: column;
+                /* Öğeleri dikey olarak sırala */
+                align-items: center;
+                /* Öğeleri merkezle */
+                padding: 0 10px;
+                /* Yan padding'i azalt */
+            }
+
+            .container1,
+            .container2,
+            .update-limit {
+                flex-basis: auto;
+                /* Otomatik boyutlandırma */
+                width: 100%;
+                /* Tam genişlik kullan */
+                margin-bottom: 20px;
+                /* Alt boşluk ekle */
+            }
+
+            .update-limit {
+                margin-top: 0;
+                /* Flex container içindeyken üst boşluğa gerek yok */
+            }
+        }
+
+        @media (max-width: 480px) {
+            header h1 {
+                font-size: 1.8em;
+                /* Başlık boyutunu küçült */
+            }
+
+            nav ul li a {
+                padding: 8px 10px;
+                /* Menü link padding'ini küçült */
+            }
+
+            .container,
+            .container2,
+            .update-limit {
+                padding: 15px;
+                /* Container padding'ini küçült */
+            }
+
+            .order-item,
+            #driverList {
+                padding: 10px;
+                /* Liste öğelerinin padding'ini küçült */
+            }
+
+            footer {
+                padding: 15px;
+                /* Footer padding'ini küçült */
+            }
+
+            limits-containers {
+                height: 200px;
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+    <header>
+        <h1>Arda Taksi</h1>
+        <nav>
+            <ul>
+                <li><a href="/order/taxi">Taksi Sifarişi Ver</a></li>
+                <li><a href="/admin/drivers">Günlük hesabatlar</a></li>
+                <li><a href="/register/driver">Sürücü Qeydiyyat</a></li>
+                <li><a href="/add-coordinates">Koordinat Əlavə Et</a></li> <!-- Buraya eklendi -->
+                <!-- <li><a href="/api/help">Müştəri Mesajları</a></li> Buraya eklendi -->
+                <li><a href="/admin/delete-drivers">Şoferi sil</a></li> <!-- Buraya eklendi -->
+                <li><a href="/map-coordinates">Adresslər</a></li>
+                <!-- <li><a href="/api/taxis/delete-user-orders-page">Sifarişlər</a></li> -->
+                <li><a href="/pricetiers">Qiymət təyin et</a></li>
+                <li><a href="admin/app-version">Dəymə</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="flex-container">
+        <!-- <div class="container1">
+            <h2>Ofis Sifarişləri</h2>
+            <div id="orderList"></div>
+        </div> -->
+
+
+        <div class="container update-limit">
+            <h3>Balansı Yenilə</h3>
+            <label for="driverSelect">Sürücü Seçin:</label>
+            <select id="driverSelect" onchange="loadDriverLimit()">
+                <option value="">Bir sürücü seçin</option>
+            </select>
+            <label for="newLimit">Yeni Balans:</label>
+            <input type="number" id="newLimit" required>
+            <button id="updateLimitButton" onclick="updateLimit()">Yenilə</button>
+        </div>
+
+        <div class="container2">
+            <h2>Sürücülərin Balansı</h2>
+            <div class="driver-list" id="driverList">
+                <!-- Sürücü listesi burada yüklenecek -->
+            </div>
+        </div>
+
+
+    </div>
+
+    <footer>
+        <!-- <p>© Arda Taksi</p> -->
+        <a style="text-decoration: none; color: white;" href="/orders">© Arda Taksi</a>
+    </footer>
+
+    <script>
+        // async function fetchUserOrders() {
+        //     const userId = '680208c697715af83884bf47';
+        //     const response = await fetch(`/api/taxis/userRequests/${userId}`);
+
+        //     if (response.ok) {
+        //         const orders = await response.json();
+        //         const orderList = document.getElementById('orderList');
+
+        //         if (orders.length === 0) {
+        //             orderList.innerHTML = '<p>Bu kullanıcıya ait sipariş bulunamadı.</p>';
+        //         } else {
+        //             orders.forEach(order => {
+        //                 const orderItem = document.createElement('div');
+        //                 orderItem.className = 'order-item';
+        //                 orderItem.innerHTML = `
+        //                     <p><strong>Müştəri Adresi:</strong> ${order.currentAddress.text}</p>
+        //                     <p><strong>Gediləcək Adres:</strong> ${order.destinationAddress.text}</p>
+        //                     <p><strong>Gediləcək Adres:</strong> ${order.destination2.text}</p>
+        //                     <p><strong>Əlavə məlumat:</strong> ${order.additionalInfo || 'Yok'}</p>
+        //                     <p><strong>Qiymət:</strong> ${order.price.toFixed(2)} ₼</p>
+        //                     <p><strong>Qəbul :</strong> ${order.isConfirmed ? 'Edildi' : 'Edilməmiş'}</p>
+        //                     <br>
+        //                     ${order.driverDetails ? `
+        //                         <p><strong>Təsdiqləyən Sürücü:</strong> ${order.driverDetails.firstName}</p>
+        //                         <p><strong>Maşın nömrəsi:</strong> ${order.driverDetails.carPlate}</p>
+        //                         <p><strong>Şofer tel no:</strong> ${order.driverDetails.phone}</p>
+        //                     ` : ''}
+        //                 `;
+        //                 orderList.appendChild(orderItem);
+        //             });
+        //         }
+        //     } else {
+        //         const errorMessage = await response.json();
+        //         document.getElementById('orderList').innerHTML = `<p>${errorMessage.message}</p>`;
+        //     }
+        // }
+
+        // document.addEventListener('DOMContentLoaded', fetchUserOrders);
+
+        let driversData = [];
+
+        async function fetchDrivers() {
+            const response = await fetch('/api/drivers/get-drivers');
+            if (response.ok) {
+                driversData = await response.json();
+                const driverList = document.getElementById('driverList');
+                const driverSelect = document.getElementById('driverSelect');
+                driverList.innerHTML = '';
+                driverSelect.innerHTML = '';
+
+                driversData.forEach(driver => {
+                    const driverItem = document.createElement('div');
+                    const isAtWork = driver.atWork;
+                    const statusText = isAtWork ? 'İşdə' : 'İşdə deyil';
+                    const color = isAtWork ? 'green' : 'red';
+
+                    driverItem.className = 'driver-item';
+                    driverItem.innerHTML = `
+                <span><strong>${driver.firstName} ${driver.lastName}</strong></span>
+                <span style="color: ${color}; margin-left: 10px;">${statusText}</span>
+                <span style="margin-left: 20px;">Balans: <span class="limit">${driver.limit != null && driver.limit !== '' ? driver.limit.toFixed(2) : '0.0'} ₼</span></span>
+            `;
+                    driverList.appendChild(driverItem);
+
+                    const option = document.createElement('option');
+                    option.value = driver._id;
+                    option.textContent = `${driver.firstName} ${driver.lastName}`;
+                    driverSelect.appendChild(option);
+                });
+
+            } else {
+                console.error('Sürücüler alınırken hata oluştu.');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchDrivers);
+
+        function loadDriverLimit() {
+            const selectedDriverId = document.getElementById('driverSelect').value;
+            const selectedDriver = driversData.find(driver => driver._id === selectedDriverId);
+
+            if (selectedDriver) {
+                document.getElementById('newLimit').value = selectedDriver.limit; // Seçilen sürücünün limitini yükle
+            } else {
+                document.getElementById('newLimit').value = ''; // Temizle
+            }
+        }
+
+        async function updateLimit() {
+            const selectedDriverId = document.getElementById('driverSelect').value;
+            const newLimit = document.getElementById('newLimit').value;
+
+            if (!selectedDriverId) {
+                alert('Lütfen bir sürücü seçin.');
+                return;
+            }
+
+            const numericNewLimit = parseFloat(newLimit);
+            if (isNaN(numericNewLimit) || numericNewLimit <= 0) {
+                alert('Lütfen geçerli bir limit değeri girin.');
+                return;
+            }
+
+            const response = await fetch(`/api/drivers/${selectedDriverId}/updateLimit`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ limit: numericNewLimit }),
+            });
+
+            if (response.ok) {
+                alert('Limit başarıyla güncellendi!');
+                fetchDrivers();
+            } else {
+                const errorData = await response.json();
+                alert(`Limit güncellenirken hata oluştu: ${errorData.msg}`);
+            }
+        }
+    </script>
+
+    <script>
+        const mainTitle = document.getElementById('mainTitle');
+        const orderFormSection = document.getElementById('orderFormSection');
+        const orderDetailsSection = document.getElementById('orderDetailsSection');
+        const orderDetailsContentDiv = document.getElementById('orderDetailsContent');
+        const driverInfoDiv = document.getElementById('driverInfo');
+        const driverDetailsDiv = document.getElementById('driverDetails');
+        const driverStatusPara = document.getElementById('driverStatus');
+        const form = document.getElementById('taxiOrderForm');
+        const messageDiv = document.getElementById('message');
+        const cancelOrderButton = document.getElementById('cancelOrderButton');
+        const confirmOrderButton = document.getElementById('confirmOrderButton'); // Onaylama butonu
+
+        // Adres Arama Elementleri
+        const currentAddressInput = document.getElementById('currentAddressText');
+        const currentAddressLatitudeInput = document.getElementById('currentAddressLatitude');
+        const currentAddressLongitudeInput = document.getElementById('currentAddressLongitude');
+        const currentAddressResultsList = document.getElementById('currentAddressResults');
+
+        const destinationAddressInput = document.getElementById('destinationAddressText');
+        const destinationAddressLatitudeInput = document.getElementById('destinationAddressLatitude');
+        const destinationAddressLongitudeInput = document.getElementById('destinationAddressLongitude');
+        const destinationAddressResultsList = document.getElementById('destinationAddressResults');
+
+        const destination2Input = document.getElementById('destination2Text');
+        const destination2LatitudeInput = document.getElementById('destination2Latitude');
+        const destination2LongitudeInput = document.getElementById('destination2Longitude');
+        const destination2ResultsList = document.getElementById('destination2Results');
+
+        // Yeni Eklenen Alanlar
+        const telInput = document.getElementById('tel');
+        const additionalInfoTextarea = document.getElementById('additionalInfo');
+
+
+        let currentRequestId = null; // Aktif siparişin ID'sini saklamak için
+        let pollInterval = null; // Periyodik kontrol için interval ID'si
+        let allCoordinates = []; // Tüm koordinatları saklamak için
+
+
+        // Periyodik kontrolü durdurma fonksiyonu
+        function stopPolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+        }
+
+        // Tüm koordinatları API'den çekme fonksiyonu
+        async function fetchAllCoordinates() {
+            try {
+                const response = await fetch('/api/coordinates'); // Koordinatları çeken rotanız
+                if (response.ok) {
+                    allCoordinates = await response.json();
+                    console.log('Koordinatlar başarıyla yüklendi:', allCoordinates);
+                } else {
+                    console.error('Koordinatlar yüklenirken hata oluştu:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Koordinatlar yüklenirken sunucu hatası:', error);
+            }
+        }
+
+        // Arama sonuçlarını filtreleme ve gösterme fonksiyonu
+        function filterAndDisplayResults(inputElement, resultsListElement, latitudeInput, longitudeInput) {
+            const searchTerm = inputElement.value.toLowerCase();
+            resultsListElement.innerHTML = ''; // Önceki sonuçları temizle
+
+            if (searchTerm.length < 2) { // En az 2 karakter girilirse arama yap
+                resultsListElement.style.display = 'none';
+                return;
+            }
+
+            const filteredCoords = allCoordinates.filter(coord =>
+                coord.addressName.toLowerCase().includes(searchTerm)
+            );
+
+            if (filteredCoords.length > 0) {
+                filteredCoords.forEach(coord => {
+                    const li = document.createElement('li');
+                    li.textContent = coord.addressName;
+                    li.addEventListener('click', () => {
+                        inputElement.value = coord.addressName;
+                        latitudeInput.value = coord.latitude;
+                        longitudeInput.value = coord.longitude;
+                        resultsListElement.style.display = 'none'; // Seçim yapıldıktan sonra listeyi gizle
+                    });
+                    resultsListElement.appendChild(li);
+                });
+                resultsListElement.style.display = 'block'; // Sonuç varsa listeyi göster
+            } else {
+                resultsListElement.style.display = 'none'; // Sonuç yoksa listeyi gizle
+            }
+        }
+
+        // Input alanlarına keyup event listener ekle
+        currentAddressInput.addEventListener('input', () => {
+            filterAndDisplayResults(currentAddressInput, currentAddressResultsList, currentAddressLatitudeInput, currentAddressLongitudeInput);
+        });
+
+        destinationAddressInput.addEventListener('input', () => {
+            filterAndDisplayResults(destinationAddressInput, destinationAddressResultsList, destinationAddressLatitudeInput, destinationAddressLongitudeInput);
+        });
+
+        destination2Input.addEventListener('input', () => {
+            filterAndDisplayResults(destination2Input, destination2ResultsList, destination2LatitudeInput, destination2LongitudeInput);
+        });
+
+        // Input dışına tıklanınca sonuç listelerini gizle
+        document.addEventListener('click', (event) => {
+            if (!event.target.closest('.address-input-container')) {
+                currentAddressResultsList.style.display = 'none';
+                destinationAddressResultsList.style.display = 'none';
+                destination2ResultsList.style.display = 'none';
+            }
+        });
+
+
+        // Sipariş detaylarını API'den çekme fonksiyonu
+        async function fetchOrderDetails(id) {
+            orderDetailsContentDiv.innerHTML = '<p class="loading">Sifariş məlumatı yüklənir...</p>';
+            driverInfoDiv.style.display = 'none';
+            driverDetailsDiv.innerHTML = ''; // Şoför bilgilerini temizle
+            driverStatusPara.style.display = 'block'; // Durumu göster
+            driverStatusPara.textContent = 'Şofer tapılmadı vəya məlumatı gözlənir...';
+            driverStatusPara.className = 'not-assigned';
+            confirmOrderButton.classList.add('hidden'); // Her yeni çekimde butonu gizle
+            confirmOrderButton.disabled = false; // Butonu etkinleştir
+
+            try {
+                // Sipariş detaylarını /api/taxis/order/:requestId rotasından çekiyoruz
+                const response = await fetch(`/api/taxis/order/${id}`);
+                const order = await response.json();
+
+                if (response.ok) {
+                    orderDetailsContentDiv.innerHTML = `
+                    <div class="detail-item"><strong>Müştəri ünvanı:</strong> ${order.currentAddress.text || 'Təyin olunmayıb'}</div>
+                    ${order.currentAddress && order.currentAddress.latitude && order.currentAddress.longitude ?
+                            `<div class="detail-item"><strong>Koordinat:</strong> ${order.currentAddress.latitude}, ${order.currentAddress.longitude}</div>` : ''}
+                    <div class="detail-item"><strong>Gediləcək ünvan:</strong> ${order.destinationAddress.text || 'Təyin olunmayıb'}</div>
+                     ${order.destinationAddress && order.destinationAddress.latitude && order.destinationAddress.longitude ?
+                            `<div class="detail-item"><strong>Koordinat:</strong> ${order.destinationAddress.latitude}, ${order.destinationAddress.longitude}</div>` : ''}
+                    ${order.destination2 && order.destination2.text ? `<div class="detail-item"><strong>İkinci ünvan:</strong> ${order.destination2.text}</div>` : ''}
+                     ${order.destination2 && order.destination2.latitude && order.destination2.longitude ?
+                            `<div class="detail-item"><strong>Koordinat:</strong> ${order.destination2.latitude}, ${order.destination2.longitude}</div>` : ''}
+                    <div class="detail-item"><strong>Qiymət:</strong> ${order.price ? order.price.toFixed(2) + ' TL' : 'Təyin olunmayıb'}</div>
+                     <div class="detail-item"><strong>Təsdiq vəziyyəti:</strong> <span class="${order.isConfirmed ? 'confirmed' : 'pending'}">${order.isConfirmed ? 'Təsdiqləmdi' : 'Gözləmədə'}</span></div>
+                     <div class="detail-item"><strong>Sifariş Tarixi:</strong> ${new Date(order.date).toLocaleString()}</div>
+                     ${order.time ? `<div class="detail-item"><strong>Təxmini çatma müddəti:</strong> ${order.time}</span></div>` : ''}
+                     <div class="detail-item"><strong>Telefon:</strong> ${order.tel || 'Təyin olunmayıb'}</div> <!-- Telefon bilgisini göster -->
+                     ${order.additionalInfo ? `<div class="detail-item"><strong>Əlavə məlumat:</strong> ${order.additionalInfo}</div>` : ''} <!-- Ek bilgiyi göster -->
+                `;
+
+                    // Şoför bilgileri gelmişse göster
+                    if (order.driverDetails && order.driverDetails.firstName) {
+                        driverInfoDiv.style.display = 'block';
+                        driverDetailsDiv.innerHTML = `
+                        <div class="detail-item"><strong>Ad Soyad:</strong> ${order.driverDetails.firstName}</div>
+                        <div class="detail-item"><strong>Telefon:</strong> ${order.driverDetails.phone}</div>
+                        <div class="detail-item"><strong>Araç Modeli:</strong> ${order.driverDetails.carModel}</div>
+                        <div class="detail-item"><strong>Araç Rengi:</strong> ${order.driverDetails.carColor}</div>
+                        <div class="detail-item"><strong>Plaka:</strong> ${order.driverDetails.carPlate}</div>
+                    `;
+                        driverStatusPara.style.display = 'none'; // Şoför bilgileri varsa durumu gizle
+
+                        // Şoför bilgileri geldiyse ve sipariş henüz onaylanmadıysa butonu göster
+                        if (!order.isConfirmed) {
+                            confirmOrderButton.classList.remove('hidden');
+                        } else {
+                            // Sipariş onaylandıysa periyodik kontrolü durdur
+                            stopPolling();
+                            confirmOrderButton.classList.add('hidden'); // Butonu gizle
+                        }
+
+
+                    } else {
+                        driverInfoDiv.style.display = 'block';
+                        driverDetailsDiv.innerHTML = '';
+                        driverStatusPara.style.display = 'block';
+                        driverStatusPara.textContent = 'Şoför atanmadı veya bilgiler bekleniyor...';
+                        driverStatusPara.className = 'not-assigned';
+                        confirmOrderButton.classList.add('hidden'); // Şoför bilgisi yoksa butonu gizle
+                    }
+
+                } else {
+                    orderDetailsContentDiv.innerHTML = `<p class="error">Sipariş bilgileri alınırken bir hata oluştu: ${order.message || 'Bilinmeyen Hata'}</p>`;
+                    driverInfoDiv.style.display = 'none';
+                    stopPolling(); // Hata durumunda periyodik kontrolü durdur
+                }
+
+            } catch (error) {
+                console.error('Hata:', error);
+                orderDetailsContentDiv.innerHTML = '<p class="error">Sunucuya bağlanırken bir hata oluştu.</p>';
+                driverInfoDiv.style.display = 'none';
+                stopPolling(); // Hata durumunda periyodik kontrolü durdur
+            }
+        }
+
+        // Sipariş formunun submit edilmesi (Mevcut POST /api/taxis/request rotasını kullanır)
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            // Alanların dolu olduğundan emin olun (özellikle gizli koordinat alanları)
+            if (!currentAddressInput.value || !currentAddressLatitudeInput.value || !currentAddressLongitudeInput.value ||
+                !destinationAddressInput.value || !destinationAddressLatitudeInput.value || !destinationAddressLongitudeInput.value ||
+                !telInput.value // Telefon numarası kontrolü eklendi
+            ) {
+                messageDiv.style.display = 'block';
+                messageDiv.className = 'error';
+                messageDiv.textContent = 'Lütfen mevcut ve varış adreslerini listeden seçerek girin ve telefon numaranızı ekleyin.';
+                return; // İşlemi durdur
+            }
+
+
+            const data = {
+                currentAddress: {
+                    text: currentAddressInput.value,
+                    latitude: parseFloat(currentAddressLatitudeInput.value),
+                    longitude: parseFloat(currentAddressLongitudeInput.value)
+                },
+                destinationAddress: {
+                    text: destinationAddressInput.value,
+                    latitude: parseFloat(destinationAddressLatitudeInput.value),
+                    longitude: parseFloat(destinationAddressLongitudeInput.value)
+                },
+                destination2: null, // Başlangıçta null olarak ayarla
+                price: parseFloat(document.getElementById('price').value),
+                userId: document.getElementById('userId').value, // userId inputundan al
+                tel: telInput.value, // Telefon numarasını ekle
+                additionalInfo: additionalInfoTextarea.value // Ek bilgiyi ekle
+            };
+
+            // Eğer ikinci varış adresi girilmişse
+            if (destination2Input.value && destination2LatitudeInput.value && destination2LongitudeInput.value) {
+                data.destination2 = {
+                    text: destination2Input.value,
+                    latitude: parseFloat(destination2LatitudeInput.value),
+                    longitude: parseFloat(destination2LongitudeInput.value)
+                };
+            } else if (destination2Input.value && (!destination2LatitudeInput.value || !destination2LongitudeInput.value)) {
+                // Eğer ikinci adres yazılmış ama listeden seçilmemişse hata ver
+                messageDiv.style.display = 'block';
+                messageDiv.className = 'error';
+                messageDiv.textContent = 'Lütfen ikinci varış adresini listeden seçerek girin veya boş bırakın.';
+                return; // İşlemi durdur
+            }
+
+
+            try {
+                const response = await fetch('/api/taxis/request', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                messageDiv.style.display = 'block';
+
+                if (response.ok) {
+                    messageDiv.className = 'success';
+                    messageDiv.textContent = result.message;
+
+                    if (result.requestId) {
+                        currentRequestId = result.requestId; // Sipariş ID'sini sakla
+                        mainTitle.textContent = 'Sipariş Detayları'; // Başlığı değiştir
+                        orderFormSection.classList.add('hidden'); // Formu gizle
+                        orderDetailsSection.classList.remove('hidden'); // Detay bölümünü göster
+
+                        // Sipariş detaylarını getirmeye başla ve periyodik olarak güncelle
+                        fetchOrderDetails(currentRequestId);
+                        // Periyodik kontrolü başlat
+                        stopPolling(); // Önceki interval varsa durdur
+                        pollInterval = setInterval(() => {
+                            if (currentRequestId) { // Sadece aktif sipariş varsa kontrol et
+                                fetchOrderDetails(currentRequestId);
+                            }
+                        }, 5000); // 5 saniye
+                    }
+
+                } else {
+                    messageDiv.className = 'error';
+                    messageDiv.textContent = result.message || 'Sipariş oluşturulurken bir hata oluştu.';
+                }
+
+            } catch (error) {
+                console.error('Hata:', error);
+                messageDiv.style.display = 'block';
+                messageDiv.className = 'error';
+                messageDiv.textContent = 'Sunucuya bağlanırken bir hata oluştu.';
+            }
+        });
+
+        // Siparişi iptal etme butonu (Mevcut DELETE /api/taxis/request rotasını kullanır)
+        cancelOrderButton.addEventListener('click', async () => {
+            if (!currentRequestId) {
+                alert('İptal edilecek bir sipariş bulunamadı.');
+                return;
+            }
+
+            const confirmCancel = confirm('Siparişi iptal etmek istediğinizden emin misiniz?');
+            if (!confirmCancel) {
+                return;
+            }
+
+            try {
+                // Mevcut DELETE /api/taxis/request rotasını kullanıyoruz
+                const response = await fetch('/api/taxis/request', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ requestId: currentRequestId })
+                });
+
+                if (response.ok) {
+                    alert('Sipariş başarıyla iptal edildi.');
+                    stopPolling(); // Sipariş iptal edildiğinde periyodik kontrolü durdur
+                    // Sayfayı yenileyerek formu tekrar göster
+                    window.location.reload();
+                } else {
+                    const result = await response.json();
+                    alert(`Sipariş iptal edilirken bir hata oluştu: ${result.message || 'Bilinmeyen Hata'}`);
+                }
+            } catch (error) {
+                console.error('Hata:', error);
+                alert('Sunucuya bağlanırken bir hata oluştu.');
+            }
+        });
+
+        // Siparişi onaylama butonu (Mevcut POST /api/taxis/confirm rotasını kullanır)
+        confirmOrderButton.addEventListener('click', async () => {
+            if (!currentRequestId) {
+                alert('Onaylanacak bir sipariş bulunamadı.');
+                return;
+            }
+
+            // Butonu devre dışı bırak ve yükleniyor gibi göster
+            confirmOrderButton.disabled = true;
+            confirmOrderButton.textContent = 'Onaylanıyor...';
+            confirmOrderButton.classList.remove('success');
+            confirmOrderButton.classList.add('info'); // Farklı bir renk verilebilir
+
+            try {
+                // Mevcut POST /api/taxis/confirm rotasını kullanıyoruz
+                const response = await fetch('/api/taxis/confirm', {
+                    method: 'POST', // Onaylama rotanız POST metodu kullanıyor
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        requestId: currentRequestId // Body'de sadece requestId gönderiyoruz
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('Sipariş başarıyla onaylandı!');
+                    // Onaylandıktan sonra detayları tekrar getirip durumu güncelleyelim
+                    fetchOrderDetails(currentRequestId);
+                    // Butonu gizle
+                    confirmOrderButton.classList.add('hidden');
+                    confirmOrderButton.disabled = false; // Butonu tekrar etkinleştir (gizli olsa da iyi pratik)
+                    confirmOrderButton.classList.remove('info'); // Rengi eski haline getir
+                    confirmOrderButton.classList.add('success');
+                    confirmOrderButton.textContent = 'Siparişi Onayla'; // Yazıyı eski haline getir
+                    stopPolling(); // Onaylandıktan sonra periyodik kontrolü durdur
+
+                } else {
+                    alert(`Sipariş onaylanırken bir hata oluştu: ${result.message || 'Bilinmeyen Hata'}`);
+                    confirmOrderButton.disabled = false; // Butonu tekrar etkinleştir
+                    confirmOrderButton.classList.remove('info');
+                    confirmOrderButton.classList.add('success');
+                    confirmOrderButton.textContent = 'Siparişi Onayla';
+                }
+
+            } catch (error) {
+                console.error('Hata:', error);
+                alert('Sunucuya bağlanırken bir hata oluştu.');
+                confirmOrderButton.disabled = false; // Butonu tekrar etkinleştir
+                confirmOrderButton.classList.remove('info');
+                confirmOrderButton.classList.add('success');
+                confirmOrderButton.textContent = 'Siparişi Onayla';
+            }
+        });
+
+
+        // Sayfa yüklendiğinde
+        document.addEventListener('DOMContentLoaded', () => {
+            // Koordinatları yükle
+            fetchAllCoordinates();
+
+            // Eğer URL'de bir sipariş ID'si varsa direkt detayları göster
+            const pathSegments = window.location.pathname.split('/');
+            const urlRequestId = pathSegments[pathSegments.length - 1];
+
+            if (urlRequestId && urlRequestId !== 'taxi') { // 'taxi' path'i form sayfası için
+                currentRequestId = urlRequestId;
+                mainTitle.textContent = 'Sipariş Detayları';
+                orderFormSection.classList.add('hidden');
+                orderDetailsSection.classList.remove('hidden');
+                fetchOrderDetails(currentRequestId);
+                // Periyodik kontrolü başlat
+                stopPolling(); // Önceki interval varsa durdur
+                pollInterval = setInterval(() => {
+                    if (currentRequestId) {
+                        fetchOrderDetails(currentRequestId);
+                    }
+                }, 5000); // 5 saniye
+            }
+        });
+    </script>
+
+</body>
+
+</html>

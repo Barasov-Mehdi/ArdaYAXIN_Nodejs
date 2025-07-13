@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Koordinat Əlavə Et</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-dark text-light">
+
+    <div class="container mt-5">
+        <div class="card bg-secondary text-white shadow-lg p-4 rounded">
+            <h2 class="text-center mb-4">Yeni Koordinat Əlavə Et</h2>
+           
+            <a style="color: white; font-size: 20px; margin: 10px;" href="manage-coordinates">Kordinalara Düzəliş Ver</a>
+           
+            <form action="/api/coordinates" method="POST">
+                <div class="mb-3">
+                    <label class="form-label">Ünvan Adı:</label>
+                    <input type="text" name="addressName" class="form-control" placeholder="Məsələn: Zaqatala Mərkəzi" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Enlik (Latitude):</label>
+                    <input type="text" name="latitude" class="form-control" value="41." placeholder="Məsələn: 41.0000" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Uzunluq (Longitude):</label>
+                    <input type="text" name="longitude" class="form-control" value="46." placeholder="Məsələn: 46.0000" required>
+                </div>
+
+                <button type="submit" class="btn btn-success w-100">Yadda Saxla</button>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>
