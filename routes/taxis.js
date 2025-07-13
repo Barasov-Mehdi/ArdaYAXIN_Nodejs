@@ -749,12 +749,13 @@ router.post('/cancel-order', async (req, res) => {
 
     if (
       orderToCancel.driverDetails &&
-      typeof orderToCancel.driverDetails === 'object' &&
-      Object.keys(orderToCancel.driverDetails.toObject ? orderToCancel.driverDetails.toObject() : orderToCancel.driverDetails).length > 0
+      typeof orderToCancel.driverDetails.toObject === 'function'
     ) {
-      canceledOrderData.driverDetails = orderToCancel.driverDetails;
+      const driverObj = orderToCancel.driverDetails.toObject();
+      if (driverObj && Object.keys(driverObj).length > 0) {
+        canceledOrderData.driverDetails = driverObj;
+      }
     }
-    
 
     const canceledOrder = new CanceledOrder(canceledOrderData);
     await canceledOrder.save();
@@ -767,6 +768,7 @@ router.post('/cancel-order', async (req, res) => {
     res.status(500).json({ message: 'Sifariş ləğv edilərkən bir xəta baş verdi.', error: error.message });
   }
 });
+
 
 router.post('/reassign-order', async (req, res) => {
   const { requestId } = req.body;
