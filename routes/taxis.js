@@ -105,8 +105,15 @@ router.post('/request', async (req, res) => {
 
     const message = {
       notification: {
-        title: 'AloArda',
-        body: `Yeni Sifariş: ${currentAddress.text} Qiymət: ${price} ₼`,
+        title: '📢 Yeni Sifariş Mövcuddur!',
+        body: `
+        1) ${currentAddress.text} 
+        2) ${destinationAddress.text}  
+        💰 Qiymət: ${price} ₼ 
+        📞 Tel: ${user.tel} 
+        👤 Ad: ${user.name} 
+        📏 Məsafə: ${minDistance.toFixed(1)} km
+        `
       },
       android: {
         notification: {
@@ -114,18 +121,24 @@ router.post('/request', async (req, res) => {
           sound: 'zil_sesi',
           priority: 'high',
           visibility: 'public',
+          imageUrl: 'https://yourserver.com/logo.png', // (opsiyonel) markanı gösteren logo
         },
       },
       data: {
-        requestId: savedRequest._id.toString(),
         fromAddress: currentAddress.text,
         toAddress: destinationAddress.text,
+        destination2: destination2?.text || '',
         price: price.toString(),
-        userId: userId.toString(),
+        userName: user.name,
+        userTel: user.tel,
+        additionalInfo: additionalInfo || '',
+        atAddress: atAddress?.toString() || 'false',
+        distanceKm: minDistance.toFixed(2),
         notification_type: 'NEW_ORDER_ALERT'
       },
       token: closestDriver.fcmToken,
     };
+
 
     try {
       const response = await driverApp.messaging().send(message);
@@ -384,7 +397,7 @@ router.post('/takeOrder', async (req, res) => {
     const orderLon = taxiRequest.currentAddress.longitude;
 
     const distance = getDistanceFromLatLonInKm(driverLat, driverLon, orderLat, orderLon);
-    const maxAllowedDistance = 45; 
+    const maxAllowedDistance = 45;
 
     if (distance > maxAllowedDistance) {
       console.log(`Sürücü ID: ${driverId} sipariş ID: ${requestId} için çok uzakta. Mesafe: ${distance.toFixed(2)} km`);
