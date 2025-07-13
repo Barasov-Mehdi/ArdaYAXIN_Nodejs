@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sifarişlər - Silinmiş və Obşiyə Atılan</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    body {
+      background: #121212;
+      color: #eee;
+      padding: 20px;
+      min-height: 100vh;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    h1, h2 {
+      color: #f9c74f;
+      margin-bottom: 1rem;
+    }
+    .table thead {
+      background-color: #333;
+      color: #f9c74f;
+    }
+    .table tbody tr:hover {
+      background-color: #222;
+    }
+    .no-data {
+      font-style: italic;
+      color: #bbb;
+    }
+    footer {
+      margin-top: 3rem;
+      font-size: 0.9rem;
+      text-align: center;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+
+    <h1 class="mb-4 text-center">Sifarişlər</h1>
+
+    <section class="mb-5">
+      <h2>Silinmiş Sifarişlər</h2>
+      <% if (canceledOrders.length === 0) { %>
+        <p class="no-data">Hələ silinmiş sifariş yoxdur.</p>
+      <% } else { %>
+        <div class="table-responsive">
+          <table class="table table-dark table-striped table-hover align-middle">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>İstifadəçi</th>
+                <th>Başlanğıc Ünvanı</th>
+                <th>Son Ünvan</th>
+                <th>Qiymət (₼)</th>
+                <th>Sürücü</th>
+                <th>Ləğv Səbəbi</th>
+                <th>Tarix</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% canceledOrders.forEach(order => { %>
+                <tr>
+                  <td><small><%= order._id %></small></td>
+                  <td><%= order.userId ? (order.userId.name || order.userId._id) : 'Naməlum' %></td>
+                  <td><%= order.currentAddress.text %></td>
+                  <td><%= order.destinationAddress.text %></td>
+                  <td><%= order.price %></td>
+                  <td>
+                    <% if(order.driverDetails && order.driverDetails.firstName) { %>
+                      <%= order.driverDetails.firstName %> <%= order.driverDetails.lastName || '' %>
+                    <% } else { %>
+                      Yoxdur
+                    <% } %>
+                  </td>
+                  <td><%= order.reason || 'Yoxdur' %></td>
+                  <td><%= new Date(order.date).toLocaleString('az-AZ') %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </section>
+
+    <section>
+      <h2>Obşiyə Atılan Sifarişlər</h2>
+      <% if (reassignedOrders.length === 0) { %>
+        <p class="no-data">Hələ obşiyə atılan sifariş yoxdur.</p>
+      <% } else { %>
+        <div class="table-responsive">
+          <table class="table table-dark table-striped table-hover align-middle">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>İstifadəçi</th>
+                <th>Başlanğıc Ünvanı</th>
+                <th>Son Ünvan</th>
+                <th>Qiymət (₼)</th>
+                <th>Əvvəlki Sürücü</th>
+                <th>Tarix</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% reassignedOrders.forEach(order => { %>
+                <tr>
+                  <td><small><%= order._id %></small></td>
+                  <td><%= order.userId ? (order.userId.name || order.userId._id) : 'Naməlum' %></td>
+                  <td><%= order.currentAddress.text %></td>
+                  <td><%= order.destinationAddress.text %></td>
+                  <td><%= order.price %></td>
+                  <td>
+                    <% if(order.previousDriverDetails && order.previousDriverDetails.firstName) { %>
+                      <%= order.previousDriverDetails.firstName %> <%= order.previousDriverDetails.lastName || '' %>
+                    <% } else { %>
+                      Yoxdur
+                    <% } %>
+                  </td>
+                  <td><%= new Date(order.date).toLocaleString('az-AZ') %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </section>
+
+  </div>
+
+  <footer>
+    &copy; <%= new Date().getFullYear() %> AloArda | Bütün Hüquqlar Qorunur.
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

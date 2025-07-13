@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sürücüləri Silin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        #searchContainer {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        #searchContainer input[type="text"] {
+            padding: 10px;
+            margin-right: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        #searchContainer button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #searchContainer button:hover {
+            background-color: #0056b3;
+        }
+        #driverList {
+            margin-top: 20px;
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .driver-item {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+        .driver-info {
+            flex-grow: 1;
+            margin-right: 15px;
+        }
+        .driver-info p {
+            margin: 5px 0;
+        }
+        .delete-button {
+            padding: 8px 12px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .delete-button:hover {
+            background-color: #c82333;
+        }
+        #message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            display: none; /* Başlangıçta gizli */
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+             background-color: #d1ecf1;
+             color: #0c5460;
+             border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <h1>Sürücüləri Silin</h1>
+
+    <div id="searchContainer">
+        <input type="text" id="searchInput" placeholder="Sürücünün adını, soyadını və ya ID-sini daxil edin">
+        <button id="searchButton">Axtar</button>
+        <button id="showAllButton">Hamısını Göstər</button>
+    </div>
+
+    <div id="message" class="info"></div>
+
+    <div id="driverList">
+        <!-- Sürücülər buraya yüklənəcək -->
+    </div>
+
+    <script>
+        const driverListDiv = document.getElementById('driverList');
+        const messageDiv = document.getElementById('message');
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const showAllButton = document.getElementById('showAllButton');
+
+        // Mesaj göstərmə funksiyası
+        function displayMessage(msg, type) {
+            messageDiv.textContent = msg;
+            messageDiv.className = ''; // Əvvəlki klassları təmizlə
+            messageDiv.classList.add(type); // Uğur və ya səhv klassını əlavə et
+            messageDiv.style.display = 'block'; // Görünən et
+        }
+
+        // Mesajı gizlətmə funksiyası
+        function hideMessage() {
+            messageDiv.style.display = 'none';
+        }
+
+        // Sürücüləri gətirmə və göstərmə funksiyası
+        async function fetchDrivers(searchTerm = null) {
+            hideMessage(); // Yeni axtarışdan əvvəl mesajı gizlət
+            driverListDiv.innerHTML = '<p>Yüklənir...</p>'; // Yüklənir mesajı göstər
+
+            let url = '/api/drivers/get-drivers'; // Bütün sürücüləri gətirən əsas URL
+
+            // Axtarış termi varsa, URL-ə əlavə et (backend-də bu axtarışı emal etmək lazımdır!)
+            // QEYD: Backend-də /api/drivers/get-drivers marşrutunu axtarış termi qəbul edəcək şəkildə dəyişdirməlisiniz.
+            // Hazırkı backend kodunuz yalnız bütün sürücüləri gətirir.
+            // Bu frontend kodu, backend-in axtarış termi ilə sorğu göndərməyi dəstəklədiyini fərz edir.
+            // Əgər backend-i dəyişdirə bilmirsinizsə, axtarış funksiyasını yalnız frontend tərəfində filtrləməklə həyata keçirməlisiniz.
+            if (searchTerm) {
+                 // Backend-də axtarış dəstəklənmirsə, bu hissəni şərhlərdən çıxarın və aşağıdakı filtrləmə hissəsini istifadə edin
+                 // url = `/api/drivers/search?q=${encodeURIComponent(searchTerm)}`; // Nümunə URL, backend-ə uyğunlaşdırın
+            }
+
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error(`HTTP xətası! status: ${response.status}`, errorText);
+                    throw new Error(`HTTP xətası! status: ${response.status}`);
+                }
+                let drivers = await response.json();
+
+                // Əgər backend axtarışı dəstəkləmirsə, frontend tərəfində filtrləyin
+                if (searchTerm) {
+                    const lowerCaseSearchTerm = searchTerm.toLowerCase();
+                    drivers = drivers.filter(driver =>
+                        driver.firstName.toLowerCase().includes(lowerCaseSearchTerm) ||
+                        driver.lastName.toLowerCase().includes(lowerCaseSearchTerm) ||
+                        driver._id.toLowerCase().includes(lowerCaseSearchTerm) // ID ilə axtarış
+                    );
+                }
+
+
+                driverListDiv.innerHTML = ''; // Mövcud siyahını təmizlə
+                if (drivers.length === 0) {
+                    driverListDiv.innerHTML = '<p>Sürücü tapılmadı.</p>';
+                } else {
+                    drivers.forEach(driver => {
+                        const driverItem = document.createElement('div');
+                        driverItem.classList.add('driver-item');
+                        driverItem.innerHTML = `
+                            <div class="driver-info">
+                                <p><strong>Ad:</strong> ${driver.firstName}</p>
+                                <p><strong>Soyad:</strong> ${driver.lastName}</p>
+                                <p><strong>ID:</strong> ${driver._id}</p>
+                                <!-- Limit sahəsini də göstərə bilərsiniz -->
+                                ${driver.limit !== undefined && driver.limit !== null ? `<p><strong>Limit:</strong> ${driver.limit}</p>` : ''}
+                            </div>
+                            <button class="delete-button" data-id="${driver._id}">Sil</button>
+                        `;
+                        driverListDiv.appendChild(driverItem);
+                    });
+                }
+            } catch (error) {
+                console.error('Sürücüləri gətirmə xətası:', error);
+                displayMessage('Sürücüləri gətirərkən xəta baş verdi. Zəhmət olmasa serveri və şəbəkəni yoxlayın.', 'error');
+                driverListDiv.innerHTML = ''; // Yüklənir mesajını sil
+            }
+        }
+
+        // Sürücü silmə funksiyası
+        async function deleteDriver(driverId) {
+            if (confirm('Bu sürücünü silmək istədiyinizə əminsiniz?')) {
+                try {
+                    hideMessage(); // Mesajı gizlət
+                    const response = await fetch(`/api/drivers/${driverId}`, {
+                        method: 'DELETE'
+                    });
+
+                    const result = await response.json().catch(() => ({ msg: 'Serverdən JSON cavabı alınmadı' }));
+
+                    if (response.ok) {
+                        displayMessage(result.msg || 'Sürücü uğurla silindi.', 'success');
+                        // Silinmiş sürücünü siyahıdan çıxar
+                        const driverItemToRemove = document.querySelector(`.driver-item button[data-id="${driverId}"]`).closest('.driver-item');
+                        if (driverItemToRemove) {
+                            driverItemToRemove.remove();
+                        }
+                         // Əgər axtarış edilibsə, axtarış nəticələrini yenilə, əks halda hamısını yenilə
+                        if (searchInput.value.trim() !== "") {
+                             fetchDrivers(searchInput.value.trim());
+                        } else {
+                             fetchDrivers(); // Silindikdən sonra siyahını yenilə
+                        }
+
+                    } else {
+                        displayMessage(result.msg || `Sürücü silinərkən xəta baş verdi. Status: ${response.status}`, 'error');
+                        console.error('Sürücü silmə xətası:', result);
+                    }
+                } catch (error) {
+                    console.error('Sürücü silmə xətası:', error);
+                    displayMessage('Sürücü silinərkən xəta baş verdi. Zəhmət olmasa serveri və şəbəkəni yoxlayın.', 'error');
+                }
+            }
+        }
+
+        // Axtarış düyməsinə klik hadisəsi
+        searchButton.addEventListener('click', () => {
+            const searchTerm = searchInput.value.trim();
+            fetchDrivers(searchTerm);
+        });
+
+        // "Hamısını Göstər" düyməsinə klik hadisəsi
+        showAllButton.addEventListener('click', () => {
+            searchInput.value = ''; // Axtarış sahəsini təmizlə
+            fetchDrivers(); // Bütün sürücüləri gətir
+        });
+
+        // Axtarış sahəsində Enter düyməsinə basma hadisəsi
+        searchInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // Form göndərilməsini önlə
+                searchButton.click(); // Axtar düyməsini kliklə
+            }
+        });
+
+
+        // Siyahı hissəsinə klik hadisəsi (sil düymələri üçün)
+        driverListDiv.addEventListener('click', (event) => {
+            if (event.target.classList.contains('delete-button')) {
+                const driverId = event.target.dataset.id;
+                deleteDriver(driverId);
+            }
+        });
+
+        // Səhifə yükləndikdə sürücüləri gətir
+        fetchDrivers();
+    </script>
+</body>
+</html>

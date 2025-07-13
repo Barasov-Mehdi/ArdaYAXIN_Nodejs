@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uygulama Sürüm Yönetimi</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+        .container { max-width: 800px; margin: 0 auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; text-align: center; margin-bottom: 30px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"], textarea {
+            width: calc(100% - 22px);
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        textarea { resize: vertical; min-height: 80px; }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover { background-color: #0056b3; }
+        .message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .message.success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
+        .message.error { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Uygulama Sürüm Yönetimi</h1>
+
+        <div id="statusMessage" class="message" style="display:none;"></div>
+
+        <form id="appVersionForm">
+            <div class="form-group">
+                <label for="latestVersion">En Son Sürüm:</label>
+                <input type="text" id="latestVersion" name="latestVersion" required>
+            </div>
+            <div class="form-group">
+                <label for="minRequiredVersion">Minimum Gerekli Sürüm:</label>
+                <input type="text" id="minRequiredVersion" name="minRequiredVersion">
+            </div>
+            <div class="form-group">
+                <label for="updateMessage">Güncelleme Mesajı:</label>
+                <textarea id="updateMessage" name="updateMessage"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="androidStoreUrl">Android Mağaza URL:</label>
+                <input type="text" id="androidStoreUrl" name="androidStoreUrl" required>
+            </div>
+            <div class="form-group">
+                <label for="iosStoreUrl">iOS Mağaza URL:</label>
+                <input type="text" id="iosStoreUrl" name="iosStoreUrl" required>
+            </div>
+            <button type="submit">Sürümü Güncelle</button>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById('appVersionForm');
+        const statusMessage = document.getElementById('statusMessage');
+
+        // Mevcut sürüm bilgilerini yükle
+        async function loadAppVersion() {
+            try {
+                const response = await fetch('/api/app-version');
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('latestVersion').value = data.latestVersion || '';
+                    document.getElementById('minRequiredVersion').value = data.minRequiredVersion || '';
+                    document.getElementById('updateMessage').value = data.updateMessage || '';
+                    document.getElementById('androidStoreUrl').value = data.androidStoreUrl || '';
+                    document.getElementById('iosStoreUrl').value = data.iosStoreUrl || '';
+                } else if (response.status === 404) {
+                    // İlk kez çalıştırılıyorsa varsayılan değerleri göster
+                    document.getElementById('latestVersion').value = '1.0.0';
+                    document.getElementById('minRequiredVersion').value = '1.0.0';
+                    document.getElementById('updateMessage').value = 'Uygulamanın yeni bir versiyonu mevcut. Lütfen güncelleyin!';
+                    document.getElementById('androidStoreUrl').value = 'market://details?id=com.your_app_package_name';
+                    document.getElementById('iosStoreUrl').value = 'https://apps.apple.com/us/app/yourappname/idYOURAPPID';
+                    showStatusMessage('Uygulama sürüm bilgisi bulunamadı. Lütfen ilk kaydı oluşturun.', 'info');
+                } else {
+                    showStatusMessage(`Bilgiler yüklenirken hata oluştu: ${data.msg || response.statusText}`, 'error');
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                showStatusMessage('Sunucuya bağlanılamadı.', 'error');
+            }
+        }
+
+        // Formu gönder
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+
+            try {
+                const response = await fetch('/api/app-version', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    showStatusMessage('Sürüm bilgileri başarıyla güncellendi!', 'success');
+                    loadAppVersion(); // Güncel verileri tekrar yükle
+                } else {
+                    showStatusMessage(`Hata: ${result.msg || response.statusText}`, 'error');
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                showStatusMessage('Sürüm güncellenirken sunucu hatası oluştu.', 'error');
+            }
+        });
+
+        function showStatusMessage(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = `message ${type}`; // 'success' veya 'error'
+            statusMessage.style.display = 'block';
+            setTimeout(() => {
+                statusMessage.style.display = 'none';
+            }, 5000); // 5 saniye sonra mesajı gizle
+        }
+
+        // Sayfa yüklendiğinde sürüm bilgilerini yükle
+        document.addEventListener('DOMContentLoaded', loadAppVersion);
+    </script>
+</body>
+</html>
