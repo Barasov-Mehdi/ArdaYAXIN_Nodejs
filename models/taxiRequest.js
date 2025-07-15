@@ -15,11 +15,11 @@ const taxiRequestSchema = new mongoose.Schema({
         latitude: { type: Number, required: false },
         longitude: { type: Number, required: false }
     },
-status: {
-  type: String,
-  enum: ['pending', 'assigned', 'accepted', 'onTrip', 'completed', 'cancelled'],
-  default: 'pending'
-},
+    status: {
+        type: String,
+        enum: ['pending', 'assigned', 'accepted', 'onTrip', 'completed', 'cancelled'],
+        default: 'pending'
+    },
     additionalData: {
         type: Boolean,
         required: false
@@ -37,16 +37,19 @@ status: {
         type: Number, // Price set by the driver
         required: true
     },
-assignedDriverId: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: 'Drivers',
-  required: false
-},
-visibility: {
-  type: [mongoose.Schema.Types.ObjectId], // sadece bu şoförler siparişi görebilir
-  default: []
-},
-
+    assignedDriverId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Drivers',
+        required: false
+    },
+    visibility: {
+        type: [mongoose.Schema.Types.ObjectId], // sadece bu şoförler siparişi görebilir
+        default: []
+    },
+    accepted: {
+        type: Boolean,
+        default: false
+    },
     driverId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Driver',
