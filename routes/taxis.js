@@ -19,6 +19,13 @@ function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
+
+function calculateAverageRating(ratingCount) {
+  const totalRatings = Object.entries(ratingCount).reduce((acc, [star, count]) => acc + count, 0);
+  const weightedSum = Object.entries(ratingCount).reduce((acc, [star, count]) => acc + (parseInt(star) * count), 0);
+  return totalRatings === 0 ? 0 : (weightedSum / totalRatings);
+}
+
 function deg2rad(deg) {
   return deg * (Math.PI / 180);
 }
@@ -92,10 +99,26 @@ router.post('/request', async (req, res) => {
     }
 
     // En yakın sürücüyü hesapla
+    // Uygun sürücüler listesi
+    let eligibleDrivers = drivers;
+
+    // Eğer fiyat 2 veya daha fazlaysa, ortalaması 5.0'dan büyük olan sürücüler filtrelenir
+    if (price >= 2) {
+      const highRatedDrivers = drivers.filter(driver => {
+        const avg = calculateAverageRating(driver.ratingCount || {});
+        return avg > 5;
+      });
+
+      if (highRatedDrivers.length > 0) {
+        eligibleDrivers = highRatedDrivers;
+      }
+    }
+
+    // En yakın sürücüyü seç
     let closestDriver = null;
     let minDistance = Infinity;
 
-    drivers.forEach(driver => {
+    eligibleDrivers.forEach(driver => {
       const { lat, lan } = driver.location;
       const distance = getDistanceFromLatLonInKm(orderLat, orderLon, lat, lan);
       if (distance < minDistance) {
@@ -103,6 +126,7 @@ router.post('/request', async (req, res) => {
         closestDriver = driver;
       }
     });
+
 
     if (!closestDriver || !closestDriver.fcmToken) {
       const fallbackRequest = new TaxiRequest({
