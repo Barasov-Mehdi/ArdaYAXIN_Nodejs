@@ -226,7 +226,6 @@ router.post('/request', async (req, res) => {
   }
 });
 
-// routes/taxis.js içinde (veya uygun bir controller'da)
 router.post('/orders/:orderId/reject', async (req, res) => {
   try {
     const { driverId } = req.body;
@@ -237,36 +236,31 @@ router.post('/orders/:orderId/reject', async (req, res) => {
       return res.status(404).json({ message: 'Sipariş bulunamadı.' });
     }
 
-    // Sipariş zaten alınmışsa, işlem yapma
     if (order.isTaken || order.isFinished) {
       return res.status(400).json({ message: 'Sipariş zaten alınmış veya tamamlanmış.' });
     }
 
-    // Bu sürücüyü red edenler listesine ekle (eğer yoksa oluştur)
     order.rejectedBy = order.rejectedBy || [];
     if (!order.rejectedBy.includes(driverId)) {
       order.rejectedBy.push(driverId);
     }
 
-    // Sürücüden siparişi kaldır
     if (order.driverId?.toString() === driverId) {
       order.driverId = null;
     }
 
     await order.save();
 
-    // Sürücünün onOrder durumunu false yap
     await Driver.findByIdAndUpdate(driverId, { onOrder: false });
 
-    // Yeni sürücü bul ve siparişi ona ata
     const availableDrivers = await Driver.find({
-      _id: { $nin: order.rejectedBy }, // Red edenleri çıkar
+      _id: { $nin: order.rejectedBy },
       onOrder: false,
       atWork: true,
-      location: { $exists: true },
+      'location.lat': { $exists: true },
+      'location.lan': { $exists: true }
     });
 
-    // En yakın sürücüyü bul
     const orderLat = order.currentAddress.latitude;
     const orderLon = order.currentAddress.longitude;
 
@@ -275,7 +269,7 @@ router.post('/orders/:orderId/reject', async (req, res) => {
 
     for (const driver of availableDrivers) {
       if (!driver.location || typeof driver.location.lat !== 'number' || typeof driver.location.lan !== 'number') continue;
-      const distance = getDistanceFromLatLonInKm(driver.location.lat, driver.location.lan, orderLat, orderLon);
+      const distance = getDistanceKm(driver.location.lat, driver.location.lan, orderLat, orderLon);
       if (distance < nearestDistance) {
         nearestDistance = distance;
         nearestDriver = driver;
@@ -284,11 +278,10 @@ router.post('/orders/:orderId/reject', async (req, res) => {
 
     if (nearestDriver) {
       order.driverId = nearestDriver._id;
-      // Yeni atanan sürücünün onOrder durumunu true yap (eğer sipariş ona atanmışsa)
       await Driver.findByIdAndUpdate(nearestDriver._id, { onOrder: true });
       await order.save();
 
-      // Bildirim gönder (opsiyonel)
+      // Bildirim gönderimi eklenebilir
     }
 
     return res.status(200).json({ message: 'Sipariş reddedildi, başka sürücüye atandı.' });
@@ -298,6 +291,7 @@ router.post('/orders/:orderId/reject', async (req, res) => {
     return res.status(500).json({ message: 'Sunucu hatası oluştu.' });
   }
 });
+
 
 router.delete('/request', async (req, res) => {
   try {
