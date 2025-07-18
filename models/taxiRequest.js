@@ -17,7 +17,7 @@ const taxiRequestSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'assigned', 'accepted', 'onTrip', 'completed', 'cancelled'],
+        enum: ['pending', 'assigned', 'accepted', 'onTrip', 'completed', 'cancelled', 'waiting-driver'],
         default: 'pending'
     },
     additionalData: {
@@ -46,7 +46,11 @@ const taxiRequestSchema = new mongoose.Schema({
         type: [mongoose.Schema.Types.ObjectId], // sadece bu şoförler siparişi görebilir
         default: []
     },
-    rejectedBy: { type: [String], default: [] },
+    // rejectedBy: { type: [String], default: [] },
+    lastAssignedAt: { type: Date, default: Date.now },
+    assignmentCount: { type: Number, default: 1 },
+    assignedHistory: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Driver' }],
+    rejectedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Driver' }],
     accepted: {
         type: Boolean,
         default: false

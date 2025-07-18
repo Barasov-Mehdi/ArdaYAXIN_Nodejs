@@ -9,43 +9,31 @@ const CanceledOrder = require('../models/CanceledOrder');
 const ReassignedOrder = require('../models/ReassignedOrder');
 
 
+// ========== Yardımcı Fonksiyonlar ==========
+
 function getTotalFiveStar(driver) {
   if (!driver || !driver.ratingCount) return 0;
-  // ratingCount alanı numeric olabilir; yoksa 0 döner
   return Number(driver.ratingCount[5] || driver.ratingCount['5'] || 0);
 }
 
-// Ortalamayı belki başka yerlerde kullanırsın; burada gerek yok ama tuttuk
-function calcAvgRating(ratingCount = {}) {
-  let total = 0, sum = 0;
-  for (let s = 1; s <= 5; s++) {
-    const c = Number(ratingCount[s] || ratingCount[String(s)] || 0);
-    total += c;
-    sum += s * c;
-  }
-  return total ? sum / total : 0;
-}
-
-// Geçerli koordinat kontrolü
 function hasValidCoords(d) {
   const loc = d.location || {};
-  const { lat, lan } = loc;       // NOTE: Mongo şeman bu şekilde; değiştirmezsen burada da lan kullanıyoruz
-  return Number.isFinite(lat) && Number.isFinite(lan);
+  return Number.isFinite(loc.lat) && Number.isFinite(loc.lan);
 }
 
-// Haversine
 function deg2rad(deg) { return deg * (Math.PI / 180); }
 function getDistanceKm(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = deg2rad(lat2 - lat1);
   const dLon = deg2rad(lon2 - lon1);
-  const a = Math.sin(dLat / 2) ** 2 +
-            Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
-            Math.sin(dLon / 2) ** 2;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+    Math.sin(dLon / 2) ** 2;
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
+  return R * c; // BU DOĞRU
 }
-
+// Sürücü Seçme
 async function selectBestDriver({ price, orderLat, orderLon }) {
   let drivers = await Driver.find({
     atWork: true,
@@ -58,39 +46,116 @@ async function selectBestDriver({ price, orderLat, orderLon }) {
   if (!drivers.length) return null;
 
   if (price <= 2) {
-    // PUAN YOK, SADECE MESAFEYE BAK
-    let best = null;
-    let minDist = Infinity;
-    for (const d of drivers) {
+    // SADECE EN YAKIN
+    return drivers.reduce((best, d) => {
       const dist = getDistanceKm(orderLat, orderLon, d.location.lat, d.location.lan);
-      if (dist < minDist) {
-        minDist = dist;
-        best = d;
-      }
-    }
-    return best;
+      if (!best || dist < best.dist) return { driver: d, dist };
+      return best;
+    }, null)?.driver || null;
   }
 
-  // price > 2
+  // PRICE > 2: önce max 5 yıldızlılar
   const maxFive = Math.max(...drivers.map(getTotalFiveStar));
-  let pool = drivers.filter(d => getTotalFiveStar(d) === maxFive);
+  let pool = maxFive > 0
+    ? drivers.filter(d => getTotalFiveStar(d) === maxFive)
+    : drivers;
 
-  if (maxFive === 0) {
-    pool = drivers;
-  }
-
-  let best = null;
-  let minDist = Infinity;
-  for (const d of pool) {
+  // Havuzdan en yakın
+  return pool.reduce((best, d) => {
     const dist = getDistanceKm(orderLat, orderLon, d.location.lat, d.location.lan);
-    if (dist < minDist) {
-      minDist = dist;
-      best = d;
-    }
+    if (!best || dist < best.dist) return { driver: d, dist };
+    return best;
+  }, null)?.driver || null;
+}
+// Bildirim
+async function sendOrderFCMToDriver(driver, order) {
+  if (!driver?.fcmToken) return;
+  const distanceKm = getDistanceKm(
+    order.currentAddress.latitude,
+    order.currentAddress.longitude,
+    driver.location.lat,
+    driver.location.lan
+  );
+
+  try {
+    await driverApp.messaging().send({
+      notification: {
+        title: '📢 Yeni Sifariş Mövcuddur!',
+        body: `1. ${order.currentAddress.text}\n\n2. ${order.destinationAddress.text}\n💰 ${order.price} ₼\n📞 ${order.tel}\n👤 ${order.name}\n📏 ${distanceKm.toFixed(1)} km`
+      },
+      data: {
+        fromAddress: order.currentAddress.text,
+        toAddress: order.destinationAddress.text,
+        price: String(order.price),
+        distanceKm: distanceKm.toFixed(2),
+        notification_type: 'NEW_ORDER_ALERT',
+        orderId: String(order._id)
+      },
+      token: driver.fcmToken,
+    });
+  } catch (err) {
+    console.error('FCM error:', err);
   }
-  return best;
 }
 
+// Otomatik Yeniden Atama
+async function autoReassignOrder(order) {
+  if (order.isTaken || order.isFinished || order.status !== 'pending') return;
+
+  const now = Date.now();
+  const last = order.lastAssignedAt ? order.lastAssignedAt.getTime() : 0;
+  if (now - last < 10_000) return; // 10 saniye dolmamışsa çık
+
+  // Eski sürücüyü boşalt
+  if (order.driverId) {
+    await Driver.updateOne({ _id: order.driverId }, { $set: { onOrder: false } });
+    if (!order.rejectedBy.includes(order.driverId)) {
+      order.rejectedBy.push(order.driverId);
+    }
+  }
+
+  // Yeni sürücü bul
+  const orderLat = order.currentAddress.latitude;
+  const orderLon = order.currentAddress.longitude;
+  const excludeIds = [...order.rejectedBy.map(String), ...(order.assignedHistory || []).map(String)];
+
+  let drivers = await Driver.find({
+    _id: { $nin: excludeIds },
+    atWork: true,
+    onOrder: false,
+    'location.lat': { $ne: null },
+    'location.lan': { $ne: null }
+  });
+
+  drivers = drivers.filter(hasValidCoords);
+  if (!drivers.length) {
+    order.driverId = null;
+    order.status = 'waiting-driver';
+    order.lastAssignedAt = new Date();
+    await order.save();
+    return;
+  }
+
+  const nextDriver = await selectBestDriver({ price: order.price, orderLat, orderLon, candidateDrivers: drivers });
+
+  order.driverId = nextDriver._id;
+  order.visibility.push(nextDriver._id);
+  order.assignmentCount += 1;
+  order.assignedHistory.push(nextDriver._id);
+  order.lastAssignedAt = new Date();
+  await order.save();
+
+  await Driver.updateOne(
+    { _id: nextDriver._id, onOrder: false },
+    { $set: { onOrder: true }, $push: { lastOrderIds: order._id } }
+  );
+
+  await sendOrderFCMToDriver(nextDriver, order);
+}
+
+// ========== Routes ==========
+
+// Sipariş oluştur
 router.post('/request', async (req, res) => {
   try {
     const {
@@ -104,53 +169,52 @@ router.post('/request', async (req, res) => {
       atAddress
     } = req.body;
 
-    // --- ZORUNLU ALANLAR ---
-    if (!currentAddress || !currentAddress.text ||
-        !destinationAddress || !destinationAddress.text ||
-        !userId || price == null) {
+    // Zorunlu alanlar
+    if (!currentAddress?.text || !destinationAddress?.text || !userId || price == null) {
       return res.status(400).json({ message: 'Gerekli alanlar eksik.' });
     }
 
-    // --- USER ---
+    // Kullanıcı
     const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
-    }
+    if (!user) return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
     if (!user.tel || !user.name) {
       return res.status(400).json({ message: 'Kullanıcının telefon veya adı kayıtlı değil.' });
     }
 
-    // --- KOORDİNATLAR ---
+    // Koordinatlar
     const orderLat = currentAddress.latitude;
     const orderLon = currentAddress.longitude;
     if (!Number.isFinite(orderLat) || !Number.isFinite(orderLon)) {
-      return res.status(400).json({ message: 'Koordinatlar eksik veya geçersiz.' });
+      return res.status(400).json({ message: 'Koordinatlar geçersiz.' });
     }
 
-    // --- FİYAT NUMERIC ---
-    let numericPrice;
-    if (typeof price === 'number') {
-      numericPrice = price;
-    } else {
-      // içinde harf varsa temizle (₼ vs)
-      numericPrice = parseFloat(String(price).replace(/[^0-9.,-]/g, '').replace(',', '.'));
-    }
+    // Fiyat
+    const numericPrice = typeof price === 'number'
+      ? price
+      : parseFloat(String(price).replace(/[^0-9.,-]/g, '').replace(',', '.'));
     if (!Number.isFinite(numericPrice)) {
       return res.status(400).json({ message: 'Geçersiz fiyat.' });
     }
 
-    // --- SÜRÜCÜ SEÇ ---
+    // Sürücü seç (opsiyonel)
     const driver = await selectBestDriver({ price: numericPrice, orderLat, orderLon });
 
-    if (!driver) {
-      // senin isteğin: sürücü yoksa SİPARİŞ VERİLMEYECEK
-      return res.status(400).json({ message: 'Müsait sürücü yok. Sipariş oluşturulmadı.' });
+    // Şoför durumuna göre başlangıç değerleri
+    let driverId = null;
+    let visibility = [];
+    let assignmentCount = 0;
+    let assignedHistory = [];
+    let lastAssignedAt = new Date(0); // hemen denensin
+
+    if (driver) {
+      driverId = driver._id;
+      visibility = [driver._id];
+      assignmentCount = 1;
+      assignedHistory = [driver._id];
+      lastAssignedAt = new Date();
     }
 
-    // --- MESAFE ---
-    const distanceKm = getDistanceKm(orderLat, orderLon, driver.location.lat, driver.location.lan);
-
-    // --- SİPARİŞ KAYDET ---
+    // Sipariş yarat
     const savedRequest = await TaxiRequest.create({
       currentAddress,
       destinationAddress,
@@ -162,128 +226,88 @@ router.post('/request', async (req, res) => {
       name: user.name,
       price: numericPrice,
       atAddress,
-      driverId: driver._id,
-      visibility: [driver._id],
+      driverId,
+      visibility,
       isTaken: false,
-      status: 'pending'
+      status: 'pending', // beklemede
+      lastAssignedAt,
+      assignmentCount,
+      assignedHistory,
+      rejectedBy: []
     });
 
-    // --- SÜRÜCÜYÜ MEŞGUL İŞARETLE (atomic) ---
-    const upd = await Driver.updateOne(
-      { _id: driver._id, onOrder: false },
-      {
-        $set: { onOrder: true },
-        $push: { lastOrderIds: savedRequest._id }
-      }
-    );
-    if (!upd.modifiedCount) {
-      console.warn(`⚠️ Sürücü ${driver._id} onOrder:true yapılamadı (yarış durumu?).`);
+    // Sürücü varsa meşgul işaretle ve FCM gönder
+    if (driver) {
+      await Driver.updateOne(
+        { _id: driver._id },
+        { $set: { onOrder: true }, $push: { lastOrderIds: savedRequest._id } }
+      );
+      await sendOrderFCMToDriver(driver, savedRequest);
     }
 
-    // --- BİLDİRİM ---
-    if (driver.fcmToken) {
-      try {
-        await driverApp.messaging().send({
-          notification: {
-            title: '📢 Yeni Sifariş Mövcuddur!',
-            body: `1. ${currentAddress.text}\n\n2. ${destinationAddress.text}\n💰 ${numericPrice} ₼\n📞 ${user.tel}\n👤 ${user.name}\n📏 ${distanceKm.toFixed(1)} km`
-          },
-          data: {
-            fromAddress: currentAddress.text,
-            toAddress: destinationAddress.text,
-            price: String(numericPrice),
-            distanceKm: distanceKm.toFixed(2),
-            notification_type: 'NEW_ORDER_ALERT'
-          },
-          token: driver.fcmToken,
-        });
-      } catch (err) {
-        console.error('FCM error:', err);
-      }
-    } else {
-      console.warn(`⚠️ Sürücü ${driver._id} için FCM token yok.`);
-    }
-
-    // --- RESPONSE ---
     return res.status(201).json({
-      message: 'Sipariş kaydedildi ve seçilen sürücüye bildirildi.',
+      message: driver
+        ? 'Sipariş kaydedildi ve sürücüye bildirildi.'
+        : 'Sipariş kaydedildi, sürücü bekleniyor.',
       requestId: savedRequest._id,
-      closestDriverId: driver._id,
-      distanceKm: distanceKm.toFixed(2)
+      closestDriverId: driver ? driver._id : null
     });
 
   } catch (err) {
     console.error('❌ Sunucu hatası:', err);
-    return res.status(500).json({ message: 'Sunucu hatası oluştu' });
+    return res.status(500).json({ message: 'Sunucu hatası oluştu.' });
   }
 });
 
+
+// Sipariş reddet
 router.post('/orders/:orderId/reject', async (req, res) => {
   try {
     const { driverId } = req.body;
     const { orderId } = req.params;
 
     const order = await TaxiRequest.findById(orderId);
-    if (!order) {
-      return res.status(404).json({ message: 'Sipariş bulunamadı.' });
-    }
-
-    if (order.isTaken || order.isFinished) {
-      return res.status(400).json({ message: 'Sipariş zaten alınmış veya tamamlanmış.' });
-    }
+    if (!order) return res.status(404).json({ message: 'Sipariş bulunamadı.' });
+    if (order.isTaken || order.isFinished) return res.status(400).json({ message: 'Sipariş zaten alınmış.' });
 
     order.rejectedBy = order.rejectedBy || [];
-    if (!order.rejectedBy.includes(driverId)) {
-      order.rejectedBy.push(driverId);
-    }
+    if (!order.rejectedBy.includes(driverId)) order.rejectedBy.push(driverId);
 
-    if (order.driverId?.toString() === driverId) {
-      order.driverId = null;
-    }
+    if (order.driverId?.toString() === driverId) order.driverId = null;
 
+    order.lastAssignedAt = new Date(0);
     await order.save();
 
-    await Driver.findByIdAndUpdate(driverId, { onOrder: false });
+    await Driver.updateOne({ _id: driverId }, { $set: { onOrder: false } });
 
-    const availableDrivers = await Driver.find({
-      _id: { $nin: order.rejectedBy },
-      onOrder: false,
-      atWork: true,
-      'location.lat': { $exists: true },
-      'location.lan': { $exists: true }
-    });
+    await autoReassignOrder(order);
 
-    const orderLat = order.currentAddress.latitude;
-    const orderLon = order.currentAddress.longitude;
-
-    let nearestDriver = null;
-    let nearestDistance = Infinity;
-
-    for (const driver of availableDrivers) {
-      if (!driver.location || typeof driver.location.lat !== 'number' || typeof driver.location.lan !== 'number') continue;
-      const distance = getDistanceKm(driver.location.lat, driver.location.lan, orderLat, orderLon);
-      if (distance < nearestDistance) {
-        nearestDistance = distance;
-        nearestDriver = driver;
-      }
-    }
-
-    if (nearestDriver) {
-      order.driverId = nearestDriver._id;
-      await Driver.findByIdAndUpdate(nearestDriver._id, { onOrder: true });
-      await order.save();
-
-      // Bildirim gönderimi eklenebilir
-    }
-
-    return res.status(200).json({ message: 'Sipariş reddedildi, başka sürücüye atandı.' });
-
+    return res.status(200).json({ message: 'Sipariş reddedildi, yeniden atama denendi.' });
   } catch (error) {
     console.error('Reddetme hatası:', error);
     return res.status(500).json({ message: 'Sunucu hatası oluştu.' });
   }
 });
 
+// ========== Arka Plan Kontrolü ==========
+
+setInterval(async () => {
+  try {
+    const threshold = new Date(Date.now() - 10_000);
+    const staleOrders = await TaxiRequest.find({
+      isTaken: false,
+      isFinished: { $ne: true },
+      status: 'pending',
+      lastAssignedAt: { $lte: threshold }
+    });
+
+    for (const order of staleOrders) {
+      await autoReassignOrder(order);
+    }
+  } catch (err) {
+    console.error('Auto-reassign döngü hatası:', err);
+  }
+}, 10_000);
 
 router.delete('/request', async (req, res) => {
   try {
