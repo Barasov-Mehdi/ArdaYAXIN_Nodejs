@@ -43,11 +43,11 @@
         /* Ana Konteyner */
         .container {
             display: flex;
-        
+
             /* Küçük ekranlarda alt alta düşsün */
             gap: 30px;
             /* Daha geniş bir görünüm için */
-            width:90%;
+            width: 90%;
             margin: auto;
         }
 
@@ -590,7 +590,6 @@
         let allCoordinates = [];
         let currentOrders = {}; // Store orders by their _id to easily access and update
 
-        // Function to show messages
         function showMessage(type, text) {
             messageDiv.textContent = text;
             messageDiv.className = `message ${type}`;
@@ -720,7 +719,6 @@
                     destination2LongitudeInput.value = "";
                     document.getElementById('price').value = "";
                     additionalInfo.value = "";
-                    // Automatically refresh orders after new order is placed
                     fetchOrders(); // Call fetchOrders directly
                 } else {
                     showMessage('error', 'Xəta: ' + (result.message || 'Sifariş yerləşdirilə bilmədi.'));
@@ -731,17 +729,12 @@
             }
         });
 
-
         fetchAllCoordinates();
 
-        // --- Order Management Section ---
-
-        // Function to render or update a single order card
         function renderOrderCard(order) {
             const ordersContainer = document.getElementById('ordersContainer');
             let orderCard = document.getElementById(`order-card-${order._id}`);
 
-            // If order is finished, remove it from the DOM and currentOrders
             if (order.isFinished) {
                 if (orderCard) {
                     ordersContainer.removeChild(orderCard);
@@ -757,7 +750,6 @@
                 '<div class="status-circle takedCustumor"><i class="fas fa-check"></i></div>' :
                 '<div class="status-circle takedCustumorNot"><i class="fas fa-times"></i></div>';
 
-            // Play sound if atAddress is true and sound hasn't been played for this order
             if (order.atAddress && !window.playedSoundOrders.has(order._id)) {
                 const audio = new Audio('/assets/successfully-done-complete-sound-6-SBA-300462024-preview.mp3'); // Update path if needed
                 audio.play().catch((e) => {
@@ -765,7 +757,6 @@
                 });
                 window.playedSoundOrders.add(order._id);
             }
-            // Play sound if takenCustomer is true and sound hasn't been played for this specific event
             if (order.takenCustomer && !window.playedSoundOrders.has(`${order._id}_takenCustomer_sound`)) {
                 const audio = new Audio('/assets/elgun_ses.mp3'); // Update path if needed
                 audio.play().catch((e) => {
@@ -794,12 +785,11 @@
                 </div>
                 <div class="buttons">
                     <button class="sil" onclick="sil('${order._id}')"><i class="fas fa-times-circle"></i> Ləğv Et</button>
-                    <button class="durum" onclick="yenile('${order._id}')"><i class="fas fa-exchange-alt"></i> Obşiyə At</button>
-                    ${order.isTaken && !order.isConfirmed ? `<button class="confirm" onclick="tesdiqle('${order._id}')"><i class="fas fa-check-circle"></i> Təsdiqlə</button>` : ''}
-                    ${order.isTaken && order.isConfirmed && !order.isFinished ? `<button class="finish-order" onclick="finishOrder('${order._id}', ${order.price})"><i class="fas fa-flag-checkered"></i> Bitir</button>` : ''}
-                </div>
-            `;
 
+                   <button class="finish-order" onclick="finishOrder('${order._id}', ${order.price})"><i class="fas fa-flag-checkered"></i> Bitir</button>
+                    </div>
+                    `;
+            // <button class="durum" onclick="yenile('${order._id}')"><i class="fas fa-exchange-alt"></i> Obşiyə At</button>
             if (orderCard) {
                 // Update existing card
                 orderCard.innerHTML = orderHtml;
@@ -811,9 +801,8 @@
                 orderCard.innerHTML = orderHtml;
                 ordersContainer.appendChild(orderCard);
             }
-            currentOrders[order._id] = order; 
+            currentOrders[order._id] = order;
         }
-
 
         async function fetchOrders() {
             const userId = document.getElementById('searchUserId').value;
@@ -829,7 +818,6 @@
                 const newOrders = await response.json();
 
                 if (response.status !== 200 || newOrders.length === 0) {
-                    // If no active orders, clear all existing cards
                     ordersContainer.innerHTML = '<p style="text-align:center; color: var(--text-light);">Bu istifadəçiyə aid aktiv sifarişlər tapılmadı.</p>';
                     currentOrders = {}; // Clear cache
                     return;
@@ -842,7 +830,6 @@
                 const newOrderIds = new Set(newOrders.map(order => order._id));
                 const ordersToRemove = Object.keys(currentOrders).filter(orderId => !newOrderIds.has(orderId));
 
-                // Remove orders that are no longer in the fetched list (e.g., finished or cancelled elsewhere)
                 ordersToRemove.forEach(orderId => {
                     const orderCard = document.getElementById(`order-card-${orderId}`);
                     if (orderCard) {
@@ -851,7 +838,6 @@
                     delete currentOrders[orderId];
                 });
 
-                // Update or add new orders
                 newOrders.forEach(order => {
                     renderOrderCard(order);
                 });
@@ -864,26 +850,20 @@
 
         document.getElementById('searchForm').addEventListener('submit', async function (e) {
             e.preventDefault();
-            // Clear previous interval if any
             if (window.ordersRefreshInterval) {
                 clearInterval(window.ordersRefreshInterval);
             }
-            // Start initial fetch
             await fetchOrders();
-            // Set up a new interval to refresh every 1 second
             window.ordersRefreshInterval = setInterval(fetchOrders, 1000);
         });
 
-        // Initialize by fetching orders for the default user ID on page load
         document.addEventListener('DOMContentLoaded', () => {
-            // Trigger the form submission to load orders initially
             document.getElementById('searchForm').dispatchEvent(new Event('submit'));
         });
 
         async function sil(orderId) {
-            if (!confirm('Bu sifarişi ləğv etmək istədiyinizə əminsiniz?')) {
-                return;
-            }
+            if (!confirm('Bu sifarişi ləğv etmək istədiyinizə əminsiniz?')) return;
+
             try {
                 const response = await fetch('/api/taxis/cancel-order', {
                     method: 'POST',
@@ -891,16 +871,17 @@
                     body: JSON.stringify({ requestId: orderId })
                 });
 
+                const data = await response.json();
+                console.log('Cancel response:', data); // <-- buradan driverReleased bax
                 if (response.ok) {
-                    showMessage('success', 'Sifariş ləğv edildi və arxive əlavə olundu.');
-                    fetchOrders(); // Refresh list
+                    showMessage('success', 'Sifariş ləğv edildi.');
+                    fetchOrders();
                 } else {
-                    const errorData = await response.json();
-                    showMessage('error', errorData.message || 'Ləğv etmə uğursuz oldu.');
+                    showMessage('error', data.message || 'Ləğv etmə uğursuz oldu.');
                 }
-            } catch (error) {
-                showMessage('error', 'Ləğv etmə zamanı şəbəkə xətası baş verdi.');
-                console.error('Error cancelling order:', error);
+            } catch (err) {
+                showMessage('error', 'Şəbəkə xətası.');
+                console.error('Error cancelling order:', err);
             }
         }
 
@@ -925,27 +906,6 @@
             } catch (error) {
                 showMessage('error', 'Obşiyə atma zamanı şəbəkə xətası baş verdi.');
                 console.error('Error reassigning order:', error);
-            }
-        }
-
-        async function tesdiqle(orderId) {
-
-            try {
-                const response = await fetch('/api/taxis/updateConfirmStatus', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ requestId: orderId, isConfirmed: true })
-                });
-                if (response.ok) {
-                    showMessage('success', 'Sifariş təsdiqləndi.');
-                    fetchOrders(); // Refresh list
-                } else {
-                    const errorData = await response.json();
-                    showMessage('error', errorData.message || 'Təsdiqləmə uğursuz oldu.');
-                }
-            } catch (error) {
-                showMessage('error', 'Təsdiqləmə zamanı şəbəkə xətası baş verdi.');
-                console.error('Error confirming order:', error);
             }
         }
 
