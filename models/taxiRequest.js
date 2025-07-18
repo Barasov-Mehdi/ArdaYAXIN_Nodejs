@@ -20,7 +20,7 @@ const taxiRequestSchema = new mongoose.Schema({
         enum: ['pending', 'assigned', 'accepted', 'onTrip', 'completed', 'cancelled', 'waiting-driver'],
         default: 'pending'
     },
-    additionalData: {
+    additionalData: { 
         type: Boolean,
         required: false
     },
