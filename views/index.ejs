@@ -443,7 +443,7 @@
                         const row = driverTableBody.insertRow();
                         const statusText = driver.atWork ? 'İşdə' : 'İşdə deyil';
                         const statusClass = driver.atWork ? 'text-success' : 'text-danger';
-                        const balance = (driver.limit != null && driver.limit !== '') ? parseFloat(driver.limit).toFixed(2) : '0.00';
+                        const balance = (driver.limit != null && driver.limit !== '') ? parseFloat(driver.limit).toFixed(1) : '0.00';
 
                         row.innerHTML = `
                             <td>${driver.firstName} ${driver.lastName}</td>
@@ -471,7 +471,7 @@
             const selectedDriver = driversData.find(driver => driver._id === currentSelectedDriverId);
 
             if (selectedDriver) {
-                document.getElementById('balanceAmount').value = parseFloat(selectedDriver.limit).toFixed(2);
+                document.getElementById('balanceAmount').value = parseFloat(selectedDriver.limit).toFixed(1);
             } else {
                 document.getElementById('balanceAmount').value = '0.00';
             }
@@ -484,7 +484,7 @@
             const performChange = () => {
                 currentValue = parseFloat(balanceInput.value);
                 const newValue = increment ? (currentValue + changeAmount) : (currentValue - changeAmount);
-                balanceInput.value = newValue.toFixed(2);
+                balanceInput.value = newValue.toFixed(1);
             };
 
             performChange(); // Initial change
