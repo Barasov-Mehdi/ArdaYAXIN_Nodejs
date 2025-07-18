@@ -1,17 +1,79 @@
+function getTotalFiveStar(driver) {
+  if (!driver || !driver.ratingCount) return 0;
+  return Number(driver.ratingCount[5] || driver.ratingCount['5'] || 0);
+}
 
-function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+function calcAvgRating(ratingCount = {}) {
+  let total = 0, sum = 0;
+  for (let s = 1; s <= 5; s++) {
+    const c = Number(ratingCount[s] || ratingCount[String(s)] || 0);
+    total += c;
+    sum += s * c;
+  }
+  return total ? sum / total : 0;
+}
+
+function hasValidCoords(d) {
+  const loc = d.location || {};
+  const { lat, lan } = loc;
+  return Number.isFinite(lat) && Number.isFinite(lan);
+}
+
+function deg2rad(deg) { return deg * (Math.PI / 180); }
+
+function getDistanceKm(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = deg2rad(lat2 - lat1);
   const dLon = deg2rad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
+  const a = Math.sin(dLat / 2) ** 2 +
     Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
     Math.sin(dLon / 2) ** 2;
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
-function deg2rad(deg) {
-  return deg * (Math.PI / 180);
+
+async function selectBestDriver({ price, orderLat, orderLon }) {
+  let drivers = await Driver.find({
+    atWork: true,
+    onOrder: false,
+    'location.lat': { $ne: null },
+    'location.lan': { $ne: null }
+  });
+
+  drivers = drivers.filter(hasValidCoords);
+  if (!drivers.length) return null;
+
+  if (price <= 2) {
+
+    let best = null;
+    let minDist = Infinity;
+    for (const d of drivers) {
+      const dist = getDistanceKm(orderLat, orderLon, d.location.lat, d.location.lan);
+      if (dist < minDist) {
+        minDist = dist;
+        best = d;
+      }
+    }
+    return best;
+  }
+
+  const maxFive = Math.max(...drivers.map(getTotalFiveStar));
+  let pool = drivers.filter(d => getTotalFiveStar(d) === maxFive);
+
+  if (maxFive === 0) {
+    pool = drivers;
+  }
+
+  let best = null;
+  let minDist = Infinity;
+  for (const d of pool) {
+    const dist = getDistanceKm(orderLat, orderLon, d.location.lat, d.location.lan);
+    if (dist < minDist) {
+      minDist = dist;
+      best = d;
+    }
+  }
+  return best;
 }
 
 router.post('/request', async (req, res) => {
@@ -27,99 +89,54 @@ router.post('/request', async (req, res) => {
       atAddress
     } = req.body;
 
-    // Zorunlu alan kontrolü
-    if (
-      !currentAddress || !currentAddress.text ||
+    // --- ZORUNLU ALANLAR ---
+    if (!currentAddress || !currentAddress.text ||
       !destinationAddress || !destinationAddress.text ||
-      !userId || price == null
-    ) {
+      !userId || price == null) {
       return res.status(400).json({ message: 'Gerekli alanlar eksik.' });
     }
 
-    // Kullanıcı kontrolü
+    // --- USER ---
     const user = await User.findById(userId);
-    if (!user || !user.tel || !user.name) {
-      return res.status(400).json({ message: 'Kullanıcı bulunamadı veya telefon kaydı yok.' });
+    if (!user) {
+      return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
+    }
+    if (!user.tel || !user.name) {
+      return res.status(400).json({ message: 'Kullanıcının telefon veya adı kayıtlı değil.' });
     }
 
-    // Aktif, siparişi olmayan sürücüleri bul
-    const drivers = await Driver.find({
-      atWork: true,
-      onOrder: false,
-      'location.lat': { $exists: true },
-      'location.lan': { $exists: true }
-    });
-
-    if (drivers.length === 0) {
-      // Sürücü yoksa yine de siparişi kaydet
-      const fallbackRequest = new TaxiRequest({
-        currentAddress,
-        destinationAddress,
-        destination2,
-        additionalInfo,
-        additionalData: !!additionalData,
-        userId,
-        tel: user.tel,
-        name: user.name,
-        price,
-        atAddress,
-        isTaken: false,
-        status: "pending"
-      });
-      const savedFallback = await fallbackRequest.save();
-
-      return res.status(201).json({
-        message: 'Taksi isteği kaydedildi, ancak aktif sürücü bulunamadı.',
-        requestId: savedFallback._id
-      });
-    }
-
-    // Koordinatlar kontrolü
+    // --- KOORDİNATLAR ---
     const orderLat = currentAddress.latitude;
     const orderLon = currentAddress.longitude;
-
-    if (orderLat == null || orderLon == null) {
-      return res.status(400).json({ message: 'Koordinatlar eksik.' });
+    if (!Number.isFinite(orderLat) || !Number.isFinite(orderLon)) {
+      return res.status(400).json({ message: 'Koordinatlar eksik veya geçersiz.' });
     }
 
-    // En yakın sürücüyü hesapla
-    let closestDriver = null;
-    let minDistance = Infinity;
-
-    drivers.forEach(driver => {
-      const { lat, lan } = driver.location;
-      const distance = getDistanceFromLatLonInKm(orderLat, orderLon, lat, lan);
-      if (distance < minDistance) {
-        minDistance = distance;
-        closestDriver = driver;
-      }
-    });
-
-    if (!closestDriver || !closestDriver.fcmToken) {
-      const fallbackRequest = new TaxiRequest({
-        currentAddress,
-        destinationAddress,
-        destination2,
-        additionalInfo,
-        additionalData: !!additionalData,
-        userId,
-        tel: user.tel,
-        name: user.name,
-        price,
-        atAddress,
-        isTaken: false,
-        status: "pending"
-      });
-      const savedFallback = await fallbackRequest.save();
-
-      return res.status(201).json({
-        message: 'Sipariş kaydedildi ama uygun sürücü bulunamadı.',
-        requestId: savedFallback._id
-      });
+    // --- FİYAT NUMERIC ---
+    let numericPrice;
+    if (typeof price === 'number') {
+      numericPrice = price;
+    } else {
+      // içinde harf varsa temizle (₼ vs)
+      numericPrice = parseFloat(String(price).replace(/[^0-9.,-]/g, '').replace(',', '.'));
+    }
+    if (!Number.isFinite(numericPrice)) {
+      return res.status(400).json({ message: 'Geçersiz fiyat.' });
     }
 
-    // Siparişi en yakın sürücüye atayarak kaydet
-    const taxiRequest = new TaxiRequest({
+    // --- SÜRÜCÜ SEÇ ---
+    const driver = await selectBestDriver({ price: numericPrice, orderLat, orderLon });
+
+    if (!driver) {
+      // senin isteğin: sürücü yoksa SİPARİŞ VERİLMEYECEK
+      return res.status(400).json({ message: 'Müsait sürücü yok. Sipariş oluşturulmadı.' });
+    }
+
+    // --- MESAFE ---
+    const distanceKm = getDistanceKm(orderLat, orderLon, driver.location.lat, driver.location.lan);
+
+    // --- SİPARİŞ KAYDET ---
+    const savedRequest = await TaxiRequest.create({
       currentAddress,
       destinationAddress,
       destination2,
@@ -128,73 +145,126 @@ router.post('/request', async (req, res) => {
       userId,
       tel: user.tel,
       name: user.name,
-      price,
+      price: numericPrice,
       atAddress,
-      driverId: closestDriver._id,
-      visibility: [closestDriver._id],
+      driverId: driver._id,
+      visibility: [driver._id],
       isTaken: false,
-      status: "pending"
+      status: 'pending'
     });
 
-    const savedRequest = await taxiRequest.save();
-
-    // // Sürücünün durumu güncelle
-    // closestDriver.onOrder = true;
-    // await closestDriver.save();
-
-    // Bildirim gönder
-    const message = {
-      notification: {
-        title: '📢 Yeni Sifariş Mövcuddur!',
-        body: `
-1) ${currentAddress.text}
-2) ${destinationAddress.text}
-💰 Qiymət: ${price} ₼
-📞 Tel: ${user.tel}
-👤 Ad: ${user.name}
-📏 Məsafə: ${minDistance.toFixed(1)} km`
-      },
-      android: {
-        notification: {
-          channel_id: 'default_channel_id',
-          sound: 'zil_sesi',
-          priority: 'high',
-          visibility: 'public',
-          imageUrl: 'https://yourserver.com/logo.png',
-        },
-      },
-      data: {
-        fromAddress: currentAddress.text,
-        toAddress: destinationAddress.text,
-        destination2: destination2?.text || '',
-        price: price.toString(),
-        userName: user.name,
-        userTel: user.tel,
-        additionalInfo: additionalInfo || '',
-        atAddress: atAddress?.toString() || 'false',
-        distanceKm: minDistance.toFixed(2),
-        notification_type: 'NEW_ORDER_ALERT'
-      },
-      token: closestDriver.fcmToken,
-    };
-
-    try {
-      const response = await driverApp.messaging().send(message);
-      console.log('📲 Bildirim gönderildi:', response);
-    } catch (error) {
-      console.error('❌ Bildirim hatası:', error);
+    // --- SÜRÜCÜYÜ MEŞGUL İŞARETLE (atomic) ---
+    const upd = await Driver.updateOne(
+      { _id: driver._id, onOrder: false },
+      {
+        $set: { onOrder: true },
+        $push: { lastOrderIds: savedRequest._id }
+      }
+    );
+    if (!upd.modifiedCount) {
+      console.warn(`⚠️ Sürücü ${driver._id} onOrder:true yapılamadı (yarış durumu?).`);
     }
 
-    // Başarılı dönüş
-    res.status(201).json({
-      message: 'Sipariş kaydedildi ve en yakın sürücüye bildirildi.',
+    // --- BİLDİRİM ---
+    if (driver.fcmToken) {
+      try {
+        await driverApp.messaging().send({
+          notification: {
+            title: '📢 Yeni Sifariş Mövcuddur!',
+            body: `1. ${currentAddress.text}\n\n2. ${destinationAddress.text}\n💰 ${numericPrice} ₼\n📞 ${user.tel}\n👤 ${user.name}\n📏 ${distanceKm.toFixed(1)} km`
+          },
+          data: {
+            fromAddress: currentAddress.text,
+            toAddress: destinationAddress.text,
+            price: String(numericPrice),
+            distanceKm: distanceKm.toFixed(2),
+            notification_type: 'NEW_ORDER_ALERT'
+          },
+          token: driver.fcmToken,
+        });
+      } catch (err) {
+        console.error('FCM error:', err);
+      }
+    } else {
+      console.warn(`⚠️ Sürücü ${driver._id} için FCM token yok.`);
+    }
+
+    // --- RESPONSE ---
+    return res.status(201).json({
+      message: 'Sipariş kaydedildi ve seçilen sürücüye bildirildi.',
       requestId: savedRequest._id,
-      closestDriverId: closestDriver._id,
-      distanceKm: minDistance.toFixed(2),
+      closestDriverId: driver._id,
+      distanceKm: distanceKm.toFixed(2)
     });
 
+  } catch (err) {
+    console.error('❌ Sunucu hatası:', err);
+    return res.status(500).json({ message: 'Sunucu hatası oluştu' });
+  }
+});
+
+router.post('/orders/:orderId/reject', async (req, res) => {
+  try {
+    const { driverId } = req.body;
+    const { orderId } = req.params;
+
+    const order = await TaxiRequest.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ message: 'Sipariş bulunamadı.' });
+    }
+
+    if (order.isTaken || order.isFinished) {
+      return res.status(400).json({ message: 'Sipariş zaten alınmış veya tamamlanmış.' });
+    }
+
+    order.rejectedBy = order.rejectedBy || [];
+    if (!order.rejectedBy.includes(driverId)) {
+      order.rejectedBy.push(driverId);
+    }
+
+    if (order.driverId?.toString() === driverId) {
+      order.driverId = null;
+    }
+
+    await order.save();
+
+    await Driver.findByIdAndUpdate(driverId, { onOrder: false });
+
+    const availableDrivers = await Driver.find({
+      _id: { $nin: order.rejectedBy },
+      onOrder: false,
+      atWork: true,
+      'location.lat': { $exists: true },
+      'location.lan': { $exists: true }
+    });
+
+    const orderLat = order.currentAddress.latitude;
+    const orderLon = order.currentAddress.longitude;
+
+    let nearestDriver = null;
+    let nearestDistance = Infinity;
+
+    for (const driver of availableDrivers) {
+      if (!driver.location || typeof driver.location.lat !== 'number' || typeof driver.location.lan !== 'number') continue;
+      const distance = getDistanceKm(driver.location.lat, driver.location.lan, orderLat, orderLon);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestDriver = driver;
+      }
+    }
+
+    if (nearestDriver) {
+      order.driverId = nearestDriver._id;
+      await Driver.findByIdAndUpdate(nearestDriver._id, { onOrder: true });
+      await order.save();
+
+      // Bildirim gönderimi eklenebilir
+    }
+
+    return res.status(200).json({ message: 'Sipariş reddedildi, başka sürücüye atandı.' });
+
   } catch (error) {
-    console.error('❌ Sunucu hatası:', error);
-    res.status(500).json({ message: 'Sunucu hatası oluştu' });
+    console.error('Reddetme hatası:', error);
+    return res.status(500).json({ message: 'Sunucu hatası oluştu.' });
   }
 });

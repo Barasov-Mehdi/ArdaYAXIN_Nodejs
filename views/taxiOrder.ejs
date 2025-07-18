@@ -4,84 +4,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Taksi Sifarişi</title>
+    <title>Taksi Sifariş Paneli</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
+        /* Genel Değişkenler ve Sıfırlamalar */
+        :root {
+            --dark-bg: #1A1A2E;
+            --card-bg: #16213E;
+            --primary-color: #0F3460;
+            --accent-color: #E94560;
+            --text-light: #E0E0E0;
+            --text-dark: #FFFFFF;
+            --border-color: #0A1931;
+            --success-color: #00BF63;
+            --warning-color: #FFC107;
+            --danger-color: #DC3545;
+            --info-color: #17A2B8;
+            --button-hover: #E03554;
+            --shadow-light: 0 4px 10px rgba(0, 0, 0, 0.2);
+            --shadow-dark: 0 6px 15px rgba(0, 0, 0, 0.4);
+        }
+
         body {
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', sans-serif;
-            background-color: #121212;
-            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-light);
+            line-height: 1.6;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 40px 20px;
+            box-sizing: border-box;
         }
 
+        /* Ana Konteyner */
         .container {
             display: flex;
-            justify-content: space-between;
-            gap: 40px;
-            padding: 40px 20px;
-            max-width: 900px;
+            flex-wrap: wrap;
+            /* Küçük ekranlarda alt alta düşsün */
+            gap: 30px;
+            max-width: 1200px;
+            /* Daha geniş bir görünüm için */
+            width: 100%;
             margin: auto;
         }
 
+        /* Sol ve Sağ Panel Stilleri */
         .orderContaine,
         .getOrderContainer {
-            background-color: #1e1e1e;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 0 15px rgba(0, 255, 128, 0.1);
+            flex: 1;
+            min-width: 300px;
+            /* Her iki panelin de minimum genişliği */
+            background-color: var(--card-bg);
+            padding: 35px;
+            border-radius: 15px;
+            box-shadow: var(--shadow-dark);
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
         }
 
+        .orderContaine {
+            order: 2;
+            /* Küçük ekranlarda sipariş formunun altta kalması için */
+        }
+
+        .getOrderContainer {
+            order: 1;
+            /* Küçük ekranlarda sipariş listesinin üstte kalması için */
+        }
+
+        /* Başlıklar */
         h1 {
-            font-size: 24px;
-            margin-bottom: 20px;
-            color: #00ff80;
+            font-size: 28px;
+            margin-bottom: 25px;
+            color: var(--accent-color);
             text-align: center;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
 
+        /* Form Elemanları */
         form {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 18px;
         }
 
         label {
-            margin-bottom: 6px;
-            font-weight: bold;
-            color: #eeeeee;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: var(--text-light);
+            display: block;
+            /* Label'ların kendi satırında olması için */
         }
 
         input[type="text"],
         input[type="number"],
         textarea {
-            padding: 12px;
+            padding: 12px 15px;
             border-radius: 8px;
-            border: none;
-            background-color: #2a2a2a;
-            color: #ffffff;
+            border: 1px solid var(--primary-color);
+            background-color: var(--dark-bg);
+            color: var(--text-dark);
             width: 100%;
             box-sizing: border-box;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        textarea:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.3);
+            outline: none;
         }
 
         textarea {
             resize: vertical;
-            min-height: 80px;
+            min-height: 90px;
         }
 
         button {
-            padding: 12px;
+            padding: 14px 20px;
             border: none;
             border-radius: 8px;
-            background-color: #00ff80;
-            color: #000;
-            font-weight: bold;
+            background-color: var(--accent-color);
+            color: var(--text-dark);
+            font-weight: 700;
+            font-size: 1rem;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
         button:hover {
-            background-color: #00cc66;
+            background-color: var(--button-hover);
+            transform: translateY(-2px);
         }
 
+        .secondary-button {
+            background-color: var(--primary-color);
+            color: var(--text-light);
+        }
+
+        .secondary-button:hover {
+            background-color: #0D2B4A;
+        }
+
+
+        /* Adres Arama Sonuçları */
         .address-input-container {
             position: relative;
         }
@@ -90,255 +172,399 @@
             list-style-type: none;
             margin: 4px 0 0;
             padding: 0;
-            background-color: #2a2a2a;
-            border: 1px solid #00ff80;
-            border-radius: 6px;
-            max-height: 150px;
+            background-color: var(--dark-bg);
+            border: 1px solid var(--accent-color);
+            border-radius: 8px;
+            max-height: 180px;
             overflow-y: auto;
             position: absolute;
             width: 100%;
             z-index: 1000;
+            box-shadow: var(--shadow-light);
         }
 
         .address-search-results li {
-            padding: 8px;
+            padding: 10px 15px;
             cursor: pointer;
-            color: #fff;
+            color: var(--text-light);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            transition: background-color 0.2s ease;
+        }
+
+        .address-search-results li:last-child {
+            border-bottom: none;
         }
 
         .address-search-results li:hover {
-            background-color: #00ff80;
-            color: #000;
+            background-color: var(--primary-color);
+            color: var(--text-dark);
         }
 
+        /* Mesaj Kutusu */
         #message {
-            margin-top: 10px;
-            padding: 10px;
-            border-radius: 6px;
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 500;
+            box-shadow: var(--shadow-light);
         }
 
         #message.error {
-            background-color: #ff4d4d;
-            color: #fff;
+            background-color: var(--danger-color);
+            color: var(--text-dark);
         }
 
+        #message.success {
+            background-color: var(--success-color);
+            color: var(--text-dark);
+        }
+
+        #message.info {
+            background-color: var(--info-color);
+            color: var(--text-dark);
+        }
+
+        /* Sipariş Listesi Konteyneri */
         #ordersContainer {
-            margin-top: 20px;
-            overflow-y: scroll;
-            height: 500px;
+            margin-top: 25px;
+            max-height: 550px;
+            /* Sabit yükseklik ve scroll */
+            overflow-y: auto;
+            padding-right: 10px;
+            /* Scrollbar için boşluk */
         }
 
-        .siparis {
-            border: 1px solid #00ff80;
+        /* Scrollbar Stilleri */
+        #ordersContainer::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        #ordersContainer::-webkit-scrollbar-track {
+            background: var(--dark-bg);
             border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-            background-color: #1a1a1a;
-            color: #ccc;
         }
 
-        .sil {
-            background-color: red;
-            color: white;
+        #ordersContainer::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 10px;
         }
 
-        .durum {
-            background-color: gold;
-            color: black;
+        #ordersContainer::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-color);
+        }
+
+
+        /* Tekil Sipariş Kartı */
+        .siparis {
+            border: 1px solid var(--primary-color);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: var(--dark-bg);
+            color: var(--text-light);
+            box-shadow: var(--shadow-light);
+            transition: transform 0.2s ease;
+        }
+
+        .siparis:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-color);
+        }
+
+        .siparis p {
+            margin: 8px 0;
+            font-size: 0.95rem;
+        }
+
+        .siparis strong {
+            color: var(--text-dark);
+            min-width: 100px;
+            /* Labels align */
+            display: inline-block;
+        }
+
+        /* Durum Gösterge Kutuları */
+        .status-indicators {
+            display: flex;
+            justify-content: start;
+            align-items: center;
+            gap: 15px;
+            margin-top: 15px;
+            margin-bottom: 20px;
+        }
+
+        .status-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .status-circle {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 2px solid var(--text-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dark);
+            font-size: 0.7em;
         }
 
         .atAdresActive {
-            background-color: green;
-            border: 1px solid white;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
+            background-color: var(--success-color);
         }
 
         .atAdresNotActive {
-            background-color: gold;
-            border: 1px solid white;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
+            background-color: var(--danger-color);
         }
 
         .takedCustumor {
-            background-color: green;
-            border: 1px solid white;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
+            background-color: var(--success-color);
         }
 
         .takedCustumorNot {
-            background-color: gold;
-            border: 1px solid white;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
+            background-color: var(--danger-color);
+        }
+
+        /* Sipariş İşlem Butonları */
+        .buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 15px;
+        }
+
+        .buttons button {
+            flex: 1;
+            min-width: 100px;
+            /* Butonların minimum genişliği */
+            padding: 10px 15px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: 6px;
+            transition: background-color 0.3s ease;
+        }
+
+        .sil {
+            background-color: var(--danger-color);
+        }
+
+        .sil:hover {
+            background-color: #bb2d3b;
+        }
+
+        .durum {
+            background-color: var(--warning-color);
+            color: var(--dark-bg);
+        }
+
+        .durum:hover {
+            background-color: #e0a800;
+        }
+
+        .confirm {
+            background-color: var(--info-color);
+        }
+
+        .confirm:hover {
+            background-color: #117a8b;
         }
 
         .finish-order {
-            color: black;
+            background-color: var(--success-color);
+            color: var(--dark-bg);
         }
 
         .finish-order:hover {
             background-color: #218838;
         }
 
-        /* Medya sorgusu: küçük ekranlar için uyum */
-        @media (max-width: 768px) {
-            body {
-                font-size: 14px;
-                /* Genel font boyutunu küçült */
-            }
+        /* Link Stilleri */
+        .top-link {
+            display: block;
+            background-color: var(--primary-color);
+            color: var(--text-dark);
+            padding: 12px 0;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            transition: background-color 0.3s ease;
+        }
 
+        .top-link:hover {
+            background-color: var(--accent-color);
+        }
+
+        /* Media Queries - Responsive Tasarım */
+        @media (max-width: 992px) {
             .container {
-                flex-direction: column-reverse;
-                padding: 20px;
-                max-width: 100%;
+                flex-direction: column;
+                align-items: center;
             }
 
-            /* Containerlar genişliği ve padding ayarları */
+            .orderContaine,
+            .getOrderContainer {
+                width: 95%;
+                /* Daha dar ekranlarda tam genişlik */
+                margin: 0;
+            }
+
+            .orderContaine {
+                order: 1;
+                /* Form küçük ekranlarda üstte olsun */
+            }
+
+            .getOrderContainer {
+                order: 2;
+                /* Sipariş listesi altta olsun */
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .buttons button {
+                width: 100%;
+                flex-basis: auto;
+                /* Düğmelerin satır sonuna kadar genişlemesini sağlar */
+            }
+        }
+
+        @media (max-width: 576px) {
+            body {
+                padding: 20px 10px;
+            }
+
             .orderContaine,
             .getOrderContainer {
                 padding: 20px;
-                margin: 0 10px;
-                border-radius: 8px;
+                border-radius: 10px;
             }
 
-            /* Başlık boyutunu küçült */
             h1 {
-                font-size: 17px;
+                font-size: 20px;
+                margin-bottom: 20px;
             }
 
-            /* Form alanlar */
-            form {
-                gap: 11px;
-            }
-
-            /* Input ve textarea boyutlarını ayarla */
             input[type="text"],
             input[type="number"],
-            textarea {
-                padding: 10px;
-                font-size: 14px;
-            }
-
-            /* Buton boyutlarını küçült */
+            textarea,
             button {
-                padding: 10px;
-                font-size: 14px;
+                font-size: 0.9rem;
+                padding: 10px 12px;
             }
 
-            /* Mesaj kutusu */
-            #message {
-                font-size: 14px;
+            .address-search-results li {
+                padding: 8px 10px;
+                font-size: 0.9rem;
             }
 
-            /* Order container yüksekliğini ayarla */
-            #ordersContainer {
-                height: auto;
-                /* max-height: 300px; */
-                overflow-y: auto;
-            }
-
-            /* Sipariş kutuları */
             .siparis {
-                padding: 12px;
-                font-size: 13px;
+                padding: 15px;
+                font-size: 0.9rem;
             }
 
+            .siparis p {
+                margin: 6px 0;
+            }
 
+            .status-circle {
+                width: 18px;
+                height: 18px;
+            }
         }
     </style>
 </head>
 
 <body>
     <div class="container">
-
-
         <div class="orderContaine">
-            <a style="color: white; padding: 5px 0; width: 100%; text-align: center; font-size: 20px;"
-                href="/find-user-orders">Sifariş Axtar</a>
+            <a href="/find-user-orders" class="top-link">
+                <i class="fas fa-search"></i> Sifariş Axtar
+            </a>
 
-            <h1 id="mainTitle">Taksi Sifarişi Ver</h1>
+            <h1 id="mainTitle"><i class="fas fa-taxi"></i> Taksi Sifarişi Ver</h1>
             <div id="orderFormSection">
                 <form id="taxiOrderForm">
                     <div class="address-input-container">
                         <label for="currentAddressText">Müştəri ünvanı:</label>
-                        <input type="text" id="currentAddressText" name="currentAddressText" required>
+                        <input type="text" id="currentAddressText" name="currentAddressText"
+                            placeholder="Müştəri ünvanını daxil edin" required>
                         <input type="hidden" id="currentAddressLatitude" name="currentAddressLatitude">
                         <input type="hidden" id="currentAddressLongitude" name="currentAddressLongitude">
                         <ul class="address-search-results" id="currentAddressResults"></ul>
                     </div>
                     <div class="address-input-container">
                         <label for="destinationAddressText">Gediləcək ünvan:</label>
-                        <input type="text" id="destinationAddressText" name="destinationAddressText" required>
+                        <input type="text" id="destinationAddressText" name="destinationAddressText"
+                            placeholder="Gediləcək ünvanı daxil edin" required>
                         <input type="hidden" id="destinationAddressLatitude" name="destinationAddressLatitude">
                         <input type="hidden" id="destinationAddressLongitude" name="destinationAddressLongitude">
                         <ul class="address-search-results" id="destinationAddressResults"></ul>
                     </div>
 
                     <div class="address-input-container">
-                        <label for="destination2Text">İkinci gediləcək ünvan (isəsən):</label>
-                        <input type="text" id="destination2Text" name="destination2Text">
+                        <label for="destination2Text">İkinci gediləcək ünvan (istəyə bağlı):</label>
+                        <input type="text" id="destination2Text" name="destination2Text"
+                            placeholder="İkinci ünvanı daxil edin">
                         <input type="hidden" id="destination2Latitude" name="destination2Latitude">
                         <input type="hidden" id="destination2Longitude" name="destination2Longitude">
                         <ul class="address-search-results" id="destination2Results"></ul>
                     </div>
 
                     <div>
-                        <label for="price">Qiymət:</label>
-                        <input type="number" id="price" name="price" step="0.01" required>
+                        <label for="price">Qiymət (₼):</label>
+                        <input type="number" id="price" name="price" step="0.01" placeholder="Qiyməti daxil edin"
+                            required>
                     </div>
 
                     <div>
                         <label for="tel">Telefon Nömrəsi:</label>
-                        <input type="text" id="tel" value="0703733355" name="tel" required>
+                        <input type="text" id="tel" value="0703733355" name="tel"
+                            placeholder="Telefon nömrəsini daxil edin" required>
                     </div>
 
                     <div>
-                        <label for="additionalInfo">Əlavə məlumat (isəsən):</label>
-                        <textarea id="additionalInfo" name="additionalInfo"></textarea>
+                        <label for="additionalInfo">Əlavə məlumat (istəyə bağlı):</label>
+                        <textarea id="additionalInfo" name="additionalInfo"
+                            placeholder="Əlavə məlumatları buraya yazın"></textarea>
                     </div>
 
                     <div>
-                        <label for="userId">İD Buna dəymə:</label>
-                        <input type="text" id="userId" name="userId" value="680208c697715af83884bf47" required>
+                        <label for="userId">İstifadəçi ID:</label>
+                        <input type="text" id="userId" name="userId" value="680208c697715af83884bf47" readonly>
                     </div>
 
-                    <button type="submit">Sifariş Ver</button>
+                    <button type="submit"><i class="fas fa-paper-plane"></i> Sifariş Ver</button>
                 </form>
-                <div id="message"></div>
+                <div id="message" style="display: none;"></div>
             </div>
         </div>
+
         <div class="getOrderContainer">
-            <h1>Sifarişləri Təyin et və ya yoxla</h1>
+            <h1><i class="fas fa-clipboard-check"></i> Sifarişləri Yoxla</h1>
             <form id="searchForm">
-                <input type="text" value="680208c697715af83884bf47" id="userId"
+                <input type="text" value="680208c697715af83884bf47" id="searchUserId"
                     placeholder="İstifadəçi ID'sini daxil edin" required />
-                <button type="submit">Sifarişləri Göstər</button>
+                <button type="submit"><i class="fas fa-sync-alt"></i> Sifarişləri Yüklə</button>
             </form>
 
             <div id="ordersContainer"></div>
         </div>
     </div>
 
-    <!-- bu en yaxsisi -->
     <script>
         const mainTitle = document.getElementById('mainTitle');
         const orderFormSection = document.getElementById('orderFormSection');
-        const orderDetailsSection = document.getElementById('orderDetailsSection');
-        const orderDetailsContentDiv = document.getElementById('orderDetailsContent');
-        const driverInfoDiv = document.getElementById('driverInfo');
-        const driverDetailsDiv = document.getElementById('driverDetails');
-        const driverStatusPara = document.getElementById('driverStatus');
-        const form = document.getElementById('taxiOrderForm');
         const messageDiv = document.getElementById('message');
-        const cancelOrderButton = document.getElementById('cancelOrderButton');
-        const confirmOrderButton = document.getElementById('confirmOrderButton');
 
         const currentAddressInput = document.getElementById('currentAddressText');
         const currentAddressLatitudeInput = document.getElementById('currentAddressLatitude');
@@ -357,18 +583,33 @@
 
         const telInput = document.getElementById('tel');
         const additionalInfoTextarea = document.getElementById('additionalInfo');
+        const userIdInput = document.getElementById('userId'); // Added this for the order placement form
 
-        let currentRequestId = null;
         let allCoordinates = [];
+        let currentOrders = {}; // Store orders by their _id to easily access and update
+
+        // Function to show messages
+        function showMessage(type, text) {
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000); // Hide after 5 seconds
+        }
 
         async function fetchAllCoordinates() {
             try {
                 const response = await fetch('/api/coordinates');
                 if (response.ok) {
                     allCoordinates = await response.json();
+                } else {
+                    showMessage('error', 'Koordinatlar yüklənərkən xəta baş verdi.');
+                    console.error('Error loading coordinates:', await response.text());
                 }
             } catch (error) {
-                console.error('Koordinatlar yüklenirken hata:', error);
+                showMessage('error', 'Koordinatlar gətirilərkən şəbəkə xətası baş verdi.');
+                console.error('Network error loading coordinates:', error);
             }
         }
 
@@ -416,18 +657,16 @@
                 destination2ResultsList.style.display = 'none';
             }
         });
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
 
+        document.getElementById('taxiOrderForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
 
             if (
                 !currentAddressInput.value || !currentAddressLatitudeInput.value || !currentAddressLongitudeInput.value ||
                 !destinationAddressInput.value || !destinationAddressLatitudeInput.value || !destinationAddressLongitudeInput.value ||
-                !telInput.value
+                !telInput.value || !document.getElementById('price').value || !userIdInput.value
             ) {
-                messageDiv.style.display = 'block';
-                messageDiv.className = 'error';
-                messageDiv.textContent = 'Adresleri və telefonu doldurun.';
+                showMessage('error', 'Lütfən bütün tələb olunan sahələri doldurun.');
                 return;
             }
 
@@ -444,7 +683,7 @@
                 },
                 destination2: null,
                 price: parseFloat(document.getElementById('price').value),
-                userId: document.getElementById('userId').value,
+                userId: userIdInput.value,
                 tel: telInput.value,
                 additionalInfo: additionalInfoTextarea.value
             };
@@ -466,180 +705,274 @@
                 const result = await response.json();
 
                 if (response.ok && result.requestId) {
+                    showMessage('success', 'Sifariş uğurla yerləşdirildi!');
+                    // Clear form
                     currentAddressInput.value = "";
+                    currentAddressLatitudeInput.value = "";
+                    currentAddressLongitudeInput.value = "";
                     destinationAddressText.value = "";
+                    destinationAddressLatitudeInput.value = "";
+                    destinationAddressLongitudeInput.value = "";
                     destination2Text.value = "";
-                    price.value = "";
+                    destination2LatitudeInput.value = "";
+                    destination2LongitudeInput.value = "";
+                    document.getElementById('price').value = "";
                     additionalInfo.value = "";
-                    // alert('Sifariş verildi')
+                    // Automatically refresh orders after new order is placed
+                    fetchOrders(); // Call fetchOrders directly
                 } else {
-                    alert('Xəta: ' + (result.message || ''));
+                    showMessage('error', 'Xəta: ' + (result.message || 'Sifariş yerləşdirilə bilmədi.'));
                 }
             } catch (e) {
+                showMessage('error', 'Sunucu xətası: Sifariş yerləşdirilərkən problem yaşandı.');
                 console.error(e);
-                alert('Sunucu hatası.');
             }
         });
 
 
         fetchAllCoordinates();
-    </script>
 
-    <script>
-        document.getElementById('searchForm').addEventListener('submit', async function (e) {
-            e.preventDefault();
-            // Önceki interval varsa durdur
-            if (window.ordersRefreshInterval) {
-                clearInterval(window.ordersRefreshInterval);
-            }
-            // 1 saniyede bir yinele (daha hızlı güncelleme için)
-            window.ordersRefreshInterval = setInterval(() => {
-                document.getElementById('searchForm').dispatchEvent(new Event('submit'));
-            }, 1000);
+        // --- Order Management Section ---
 
+        // Function to render or update a single order card
+        function renderOrderCard(order) {
+            const ordersContainer = document.getElementById('ordersContainer');
+            let orderCard = document.getElementById(`order-card-${order._id}`);
 
-            const userId = document.getElementById('userId').value;
-            const response = await fetch(`/api/taxis/get-user-orders?userId=${userId}`);
-            const orders = await response.json();
-            const container = document.getElementById('ordersContainer');
-            container.innerHTML = '';
-
-            if (orders.length === 0 || response.status !== 200) {
-                container.innerHTML = '<p style="text-align:center;">Bu istifadəçiyə aid sifarişlər tapılmadı.</p>';
+            // If order is finished, remove it from the DOM and currentOrders
+            if (order.isFinished) {
+                if (orderCard) {
+                    ordersContainer.removeChild(orderCard);
+                }
+                delete currentOrders[order._id];
                 return;
             }
 
-            if (!window.playedSoundOrders) {
-                window.playedSoundOrders = new Set();
+            const atAddressBox = order.atAddress ?
+                '<div class="status-circle atAdresActive"><i class="fas fa-check"></i></div>' :
+                '<div class="status-circle atAdresNotActive"><i class="fas fa-times"></i></div>';
+            const takedCustumorBox = order.takenCustomer ?
+                '<div class="status-circle takedCustumor"><i class="fas fa-check"></i></div>' :
+                '<div class="status-circle takedCustumorNot"><i class="fas fa-times"></i></div>';
+
+            // Play sound if atAddress is true and sound hasn't been played for this order
+            if (order.atAddress && !window.playedSoundOrders.has(order._id)) {
+                const audio = new Audio('/assets/successfully-done-complete-sound-6-SBA-300462024-preview.mp3'); // Update path if needed
+                audio.play().catch((e) => {
+                    console.warn("Ses otomatik oynatılamadı (atAddress):", e);
+                });
+                window.playedSoundOrders.add(order._id);
+            }
+            // Play sound if takenCustomer is true and sound hasn't been played for this specific event
+            if (order.takenCustomer && !window.playedSoundOrders.has(`${order._id}_takenCustomer_sound`)) {
+                const audio = new Audio('/assets/elgun_ses.mp3'); // Update path if needed
+                audio.play().catch((e) => {
+                    console.warn("Ses otomatik oynatılamadı (takenCustomer):", e);
+                });
+                window.playedSoundOrders.add(`${order._id}_takenCustomer_sound`);
             }
 
-            orders.forEach(order => {
-                if (order.isFinished) {
-                    return; // Bu siparişi listede gösterme
-                }
-
-                const div = document.createElement('div');
-                div.className = 'siparis';
-
-                const atAddressBox = order.atAddress ? '<p class="atAdresActive"></p>' : '<p class="atAdresNotActive"></p>';
-                const takedCustumorBox = order.takenCustomer ? '<p class="takedCustumor"></p>' : '<p class="takedCustumorNot"></p>';
-
-                if (order.atAddress && !window.playedSoundOrders.has(order._id)) {
-                    const audio = new Audio('/assets/successfully-done-complete-sound-6-SBA-300462024-preview.mp3');
-                    audio.play().catch((e) => {
-                        console.warn("Ses otomatik oynatılamadı:", e);
-                    });
-                    window.playedSoundOrders.add(order._id);
-                }
-                if (order.takenCustomer && !window.playedSoundOrders.has(`${order._id}_takenCustomer_sound`)) {
-                    const audio = new Audio('/assets/elgun_ses.mp3');
-                    audio.play().catch((e) => {
-                        console.warn("Ses otomatik oynatılamadı:", e);
-                    });
-                    window.playedSoundOrders.add(`${order._id}_takenCustomer_sound`); // Benzersiz ID
-                }
-
-                // isTaken, isFinished veya isConfirmed'dan herhangi biri true ise sürücü bilgilerini göster
-                const driverInfo = (order.isTaken || order.isFinished || order.isConfirmed) && order.driverDetails ? `
+            const driverInfo = (order.isTaken || order.isFinished || order.isConfirmed) && order.driverDetails ? `
                 <p><strong>Sürücü Adı:</strong> ${order.driverDetails.firstName || 'Bilinmir'}</p>
                 <p><strong>Maşın No:</strong> ${order.driverDetails.carPlate || 'Bilinmir'}</p>
-                <p><strong>Müddət:</strong> ${order.time} Dəqiqə</p>
-                ` : `<p><strong>Sürücü:</strong> Almayıb</p>`;
+                <p><strong>Müddət:</strong> ${order.time != null ? order.time + ' Dəqiqə' : 'Bilinmir'}</p>
+            ` : `<p><strong>Sürücü:</strong> Təyin olunmayıb</p>`;
 
-                div.innerHTML = `
-                <p><strong>1)</strong> ${order.currentAddress.text}</p>
-                <p><strong>2)</strong> ${order.destinationAddress.text}</p>
-                <p><strong>3)</strong> ${order.destination2 && order.destination2.text ? order.destination2.text : 'Məlumat yox'}
-                </p>
+            const orderHtml = `
+                <p><strong>Müştəri:</strong> ${order.currentAddress.text}</p>
+                <p><strong>Təyinat:</strong> ${order.destinationAddress.text}</p>
+                <p><strong>İkinci Təyinat:</strong> ${order.destination2 && order.destination2.text ? order.destination2.text : 'Yoxdur'}</p>
+                <p><strong>Qiymət:</strong> ${order.price != null ? order.price.toFixed(2) + ' ₼' : 'Müəyyən deyil'}</p>
+                <p><strong>Telefon:</strong> ${order.tel || 'Yoxdur'}</p>
+                <p><strong>Əlavə Məlumat:</strong> ${order.additionalInfo || 'Yoxdur'}</p>
                 ${driverInfo}
-                <div style="display: flex; justify-content: start; align-items: center; gap: 10px;">
-                <p>${atAddressBox}A</p>
-                <p>${takedCustumorBox}S</p>    
+                <div class="status-indicators">
+                    <div class="status-box">${atAddressBox}<span>Ünvanda</span></div>
+                    <div class="status-box">${takedCustumorBox}<span>Müştəri Alındı</span></div>
                 </div>
-               <div class="buttons">
-                <button class="sil" onclick="sil('${order._id}')">Ləğv Et</button>
-                <button class="durum" onclick="yenile('${order._id}')">Obşiyə At</button>
-                ${order.isTaken && !order.isConfirmed ? `<button class="confirm"
-                    onclick="tesdiqle('${order._id}')">Təsdiqlə</button>` : ''}
-                ${order.isTaken && order.isConfirmed && !order.isFinished ? `<button class="finish-order" onclick="finishOrder('${order._id}', ${order.price})">Bitir</button>` : ''}
-            </div>
-                `;
-                container.appendChild(div);
-            });
-        });
+                <div class="buttons">
+                    <button class="sil" onclick="sil('${order._id}')"><i class="fas fa-times-circle"></i> Ləğv Et</button>
+                    <button class="durum" onclick="yenile('${order._id}')"><i class="fas fa-exchange-alt"></i> Obşiyə At</button>
+                    ${order.isTaken && !order.isConfirmed ? `<button class="confirm" onclick="tesdiqle('${order._id}')"><i class="fas fa-check-circle"></i> Təsdiqlə</button>` : ''}
+                    ${order.isTaken && order.isConfirmed && !order.isFinished ? `<button class="finish-order" onclick="finishOrder('${order._id}', ${order.price})"><i class="fas fa-flag-checkered"></i> Bitir</button>` : ''}
+                </div>
+            `;
 
-
-        async function sil(orderId) {
-            const response = await fetch('/api/taxis/cancel-order', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ requestId: orderId })
-            });
-
-            if (response.ok) {
-                // alert('Sifariş ləğv edildi və veritabanına əlavə olundu.');
-                document.getElementById('searchForm').dispatchEvent(new Event('submit'));
+            if (orderCard) {
+                // Update existing card
+                orderCard.innerHTML = orderHtml;
             } else {
-                alert('Ləğvetmə uğursuz oldu.');
+                // Create new card
+                orderCard = document.createElement('div');
+                orderCard.className = 'siparis';
+                orderCard.id = `order-card-${order._id}`;
+                orderCard.innerHTML = orderHtml;
+                ordersContainer.appendChild(orderCard);
+            }
+            currentOrders[order._id] = order; // Update or add order to currentOrders cache
+        }
+
+
+        async function fetchOrders() {
+            const userId = document.getElementById('searchUserId').value;
+            const ordersContainer = document.getElementById('ordersContainer');
+
+            if (!userId) {
+                ordersContainer.innerHTML = '<p style="text-align:center; color: var(--text-light);">Lütfən bir İstifadəçi ID-si daxil edin.</p>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/taxis/get-user-orders?userId=${userId}`);
+                const newOrders = await response.json();
+
+                if (response.status !== 200 || newOrders.length === 0) {
+                    // If no active orders, clear all existing cards
+                    ordersContainer.innerHTML = '<p style="text-align:center; color: var(--text-light);">Bu istifadəçiyə aid aktiv sifarişlər tapılmadı.</p>';
+                    currentOrders = {}; // Clear cache
+                    return;
+                }
+
+                if (!window.playedSoundOrders) {
+                    window.playedSoundOrders = new Set();
+                }
+
+                const newOrderIds = new Set(newOrders.map(order => order._id));
+                const ordersToRemove = Object.keys(currentOrders).filter(orderId => !newOrderIds.has(orderId));
+
+                // Remove orders that are no longer in the fetched list (e.g., finished or cancelled elsewhere)
+                ordersToRemove.forEach(orderId => {
+                    const orderCard = document.getElementById(`order-card-${orderId}`);
+                    if (orderCard) {
+                        ordersContainer.removeChild(orderCard);
+                    }
+                    delete currentOrders[orderId];
+                });
+
+                // Update or add new orders
+                newOrders.forEach(order => {
+                    renderOrderCard(order);
+                });
+
+            } catch (error) {
+                ordersContainer.innerHTML = '<p style="text-align:center; color: var(--danger-color);">Sifarişləri gətirərkən xəta baş verdi.</p>';
+                console.error('Error fetching orders:', error);
             }
         }
 
-        async function yenile(orderId, isTaken, isFinished) {
-            const response = await fetch('/api/taxis/reassign-order', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ requestId: orderId })
-            });
+        document.getElementById('searchForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            // Clear previous interval if any
+            if (window.ordersRefreshInterval) {
+                clearInterval(window.ordersRefreshInterval);
+            }
+            // Start initial fetch
+            await fetchOrders();
+            // Set up a new interval to refresh every 1 second
+            window.ordersRefreshInterval = setInterval(fetchOrders, 1000);
+        });
 
-            if (response.ok) {
-                // alert('Sifariş obşiyə atıldı.');
-                document.getElementById('searchForm').dispatchEvent(new Event('submit'));
-            } else {
-                alert('Obşiyə atma uğursuz oldu.');
+        // Initialize by fetching orders for the default user ID on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Trigger the form submission to load orders initially
+            document.getElementById('searchForm').dispatchEvent(new Event('submit'));
+        });
+
+        async function sil(orderId) {
+            if (!confirm('Bu sifarişi ləğv etmək istədiyinizə əminsiniz?')) {
+                return;
+            }
+            try {
+                const response = await fetch('/api/taxis/cancel-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ requestId: orderId })
+                });
+
+                if (response.ok) {
+                    showMessage('success', 'Sifariş ləğv edildi və arxive əlavə olundu.');
+                    fetchOrders(); // Refresh list
+                } else {
+                    const errorData = await response.json();
+                    showMessage('error', errorData.message || 'Ləğv etmə uğursuz oldu.');
+                }
+            } catch (error) {
+                showMessage('error', 'Ləğv etmə zamanı şəbəkə xətası baş verdi.');
+                console.error('Error cancelling order:', error);
+            }
+        }
+
+        async function yenile(orderId) {
+            if (!confirm('Bu sifarişi obşiyə (ümumi siyahıya) atmaq istədiyinizə əminsiniz?')) {
+                return;
+            }
+            try {
+                const response = await fetch('/api/taxis/reassign-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ requestId: orderId })
+                });
+
+                if (response.ok) {
+                    showMessage('success', 'Sifariş obşiyə atıldı.');
+                    fetchOrders(); // Refresh list
+                } else {
+                    const errorData = await response.json();
+                    showMessage('error', errorData.message || 'Obşiyə atma uğursuz oldu.');
+                }
+            } catch (error) {
+                showMessage('error', 'Obşiyə atma zamanı şəbəkə xətası baş verdi.');
+                console.error('Error reassigning order:', error);
             }
         }
 
         async function tesdiqle(orderId) {
-            const response = await fetch('/api/taxis/updateConfirmStatus', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ requestId: orderId, isConfirmed: true })
-            });
-            if (response.ok) {
-                // alert('Sifariş təsdiqləndi.');
-                document.getElementById('searchForm').dispatchEvent(new Event('submit'));
-            } else {
-                alert('Təsdiqləmə uğursuz oldu.');
+            if (!confirm('Bu sifarişi təsdiqləmək istədiyinizə əminsiniz?')) {
+                return;
+            }
+            try {
+                const response = await fetch('/api/taxis/updateConfirmStatus', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ requestId: orderId, isConfirmed: true })
+                });
+                if (response.ok) {
+                    showMessage('success', 'Sifariş təsdiqləndi.');
+                    fetchOrders(); // Refresh list
+                } else {
+                    const errorData = await response.json();
+                    showMessage('error', errorData.message || 'Təsdiqləmə uğursuz oldu.');
+                }
+            } catch (error) {
+                showMessage('error', 'Təsdiqləmə zamanı şəbəkə xətası baş verdi.');
+                console.error('Error confirming order:', error);
             }
         }
 
         async function finishOrder(orderId, price) {
-            console.log('Finishing order (Frontend):', { orderId, price }); // Debugging log
-            const response = await fetch('/api/drivers/finish-order', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ requestId: orderId, price: price })
-            });
-            console.log('Finish order response status (Frontend):', response.status); // Debugging log
+            if (!confirm('Bu sifarişi bitirmək istədiyinizə əminsiniz? Sürücünün limitindən 15% çıxılacaq.')) {
+                return;
+            }
+            try {
+                const response = await fetch('/api/drivers/finish-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ requestId: orderId, price: price })
+                });
 
-            if (response.ok) {
-                // alert('Sifariş tamamlandı və sürücünün limitindən 15% çıxıldı.');
-                document.getElementById('searchForm').dispatchEvent(new Event('submit')); // Sipariş listesini güncelle
-            } else {
-                const errorData = await response.json();
-                console.error('Finish order error response (Frontend):', errorData); // Debugging log
-                alert('Sifarişi tamamlama uğursuz oldu: ' + (errorData.message || 'Bilinməyən xəta'));
+                if (response.ok) {
+                    showMessage('success', 'Sifariş tamamlandı və sürücünün limitindən 15% çıxıldı.');
+                    fetchOrders(); // Refresh list
+                } else {
+                    const errorData = await response.json();
+                    showMessage('error', errorData.message || 'Sifarişi tamamlama uğursuz oldu.');
+                    console.error('Finish order error:', errorData);
+                }
+            } catch (error) {
+                showMessage('error', 'Sifarişi tamamlama zamanı şəbəkə xətası baş verdi.');
+                console.error('Network error finishing order:', error);
             }
         }
-
     </script>
 </body>
 

@@ -4,190 +4,341 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sürücü İdarəetmə və Hesabat</title>
+    <title>Sürücü İdarəetmə Paneli</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
+        /* Global Variables and Resets */
+        :root {
+            --dark-bg: #1A1A2E;
+            --card-bg: #16213E;
+            --primary-color: #0F3460;
+            --accent-color: #E94560;
+            --text-light: #E0E0E0;
+            --text-dark: #FFFFFF;
+            --border-color: #0A1931;
+            --success-color: #00BF63;
+            --warning-color: #FFC107;
+            --danger-color: #DC3545;
+            --info-color: #17A2B8;
+            --button-hover: #E03554;
+            --shadow-light: 0 4px 10px rgba(0, 0, 0, 0.2);
+            --shadow-dark: 0 6px 15px rgba(0, 0, 0, 0.4);
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f4;
-            color: #333;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-light);
+            line-height: 1.6;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 40px 20px;
+            box-sizing: border-box;
         }
 
         .container {
             max-width: 1200px;
+            width: 100%;
             margin: auto;
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            background-color: var(--card-bg);
+            padding: 35px;
+            border-radius: 15px;
+            box-shadow: var(--shadow-dark);
+            border: 1px solid var(--border-color);
         }
 
         h1,
         h2 {
-            color: #0056b3;
+            font-size: 28px;
+            margin-bottom: 25px;
+            color: var(--accent-color);
             text-align: center;
-            margin-bottom: 20px;
-            font-size: 25px;
-        }
-
-        .driver-card {
-            background-color: #e9ecef;
-            border: 1px solid #dee2e6;
-            border-radius: 5px;
-            padding: 15px;
-            margin-bottom: 15px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 15px;
             display: flex;
-            flex-wrap: wrap;
-            /* Kiçik ekranlarda bükülməsi üçün */
-            justify-content: space-between;
             align-items: center;
-        }
-
-        .driver-info {
-            flex-grow: 1;
-            min-width: 200px;
-            /* Kiçik ekranlarda oxunaqlılığı qorumaq üçün */
-        }
-
-        .driver-info h3 {
-            margin-top: 0;
-            color: #333;
-        }
-
-        .driver-actions {
-            display: flex;
-            flex-wrap: wrap;
-            /* Kiçik ekranlarda bükülməsi üçün */
+            justify-content: center;
             gap: 10px;
+        }
+
+        h2 {
+            font-size: 22px;
+            margin-top: 35px;
+        }
+
+        /* Action Section */
+        .action-section {
+            display: flex;
+            justify-content: center;
             align-items: center;
-            margin-top: 10px;
-            /* Kiçik ekranlarda məlumatdan ayırmaq üçün */
-        }
-
-        .driver-actions input[type="number"],
-        .driver-actions input[type="text"] {
-            /* Text input da əlavə olundu */
-            padding: 8px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-            width: 100px;
-            /* Genişlik artırıldı */
-        }
-
-        .driver-actions button {
-            background-color: #007bff;
-            color: white;
-            padding: 8px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            white-space: nowrap;
-            /* Düymə mətninin bir sətirdə qalması üçün */
-        }
-
-        .driver-actions button:hover {
-            background-color: #0056b3;
-        }
-
-        .report-section {
+            gap: 20px;
             margin-top: 30px;
-            border-top: 1px solid #dee2e6;
+            padding: 20px;
+            background-color: var(--primary-color);
+            border-radius: 10px;
+            box-shadow: var(--shadow-light);
+        }
+
+        .action-section button {
+            background-color: var(--danger-color);
+            color: var(--text-dark);
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .action-section button:hover {
+            transform: translateY(-2px);
+        }
+
+        .action-section button.reset-button {
+            background-color: var(--info-color); /* Mavi ton */
+        }
+
+        .action-section button.reset-button:hover {
+            background-color: #117a8b;
+        }
+
+
+        /* Report Section */
+        .report-section {
+            margin-top: 40px;
             padding-top: 20px;
         }
 
         .report-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            /* Daha geniş kartlar */
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
         }
 
         .report-card {
-            background-color: #f8f9fa;
-            border: 1px solid #e2e6ea;
-            border-radius: 5px;
-            padding: 15px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            background-color: var(--dark-bg);
+            border: 1px solid var(--primary-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow-light);
             text-align: center;
-            /* Mətn mərkəzləşdirildi */
+            transition: transform 0.2s ease, border-color 0.3s ease;
+        }
+
+        .report-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-color);
         }
 
         .report-card h3 {
             margin-top: 0;
-            color: #6c757d;
+            color: var(--text-light);
             font-size: 1.1em;
+            margin-bottom: 10px;
         }
 
         .report-card p {
-            font-size: 1.5em;
-            /* Şrift ölçüsü artırıldı */
+            font-size: 2.2em; /* Bigger font for numbers */
             font-weight: bold;
-            color: #28a745;
+            color: var(--success-color);
+            margin: 0;
         }
 
+        /* Notification */
         .notification {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 5px;
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
             text-align: center;
+            font-weight: 500;
+            box-shadow: var(--shadow-light);
             display: none;
-            /* JavaScript ilə göstəriləcək */
+            /* JS will show/hide */
+            transition: all 0.3s ease;
         }
 
+        .notification.success {
+            background-color: var(--success-color);
+            color: var(--dark-bg);
+        }
+
+        .notification.error {
+            background-color: var(--danger-color);
+            color: var(--text-dark);
+        }
+
+        /* Driver List */
         #drivers-list {
             width: 100%;
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            height: 450px;
+            gap: 20px;
+            max-height: 500px; /* Fixed height for scrolling */
             overflow-y: auto;
+            padding-right: 10px; /* Space for scrollbar */
+            margin-top: 20px;
         }
 
-        .action-section {
+        /* Scrollbar styles for drivers-list */
+        #drivers-list::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        #drivers-list::-webkit-scrollbar-track {
+            background: var(--dark-bg);
+            border-radius: 10px;
+        }
+
+        #drivers-list::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 10px;
+        }
+
+        #drivers-list::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-color);
+        }
+
+        .driver-card {
+            background-color: var(--dark-bg);
+            border: 1px solid var(--primary-color);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 0; /* Removed default margin-bottom */
             display: flex;
-            justify-content: center;
-            padding: 0 20px;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: var(--shadow-light);
+            transition: transform 0.2s ease, border-color 0.3s ease;
         }
-        .action-section button{
-            margin: 0 30px;
-            width: 100px;
+
+        .driver-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-color);
         }
-       
+
+        .driver-info h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: var(--accent-color);
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .driver-info p {
+            margin: 5px 0;
+            font-size: 1em;
+            color: var(--text-light);
+        }
+        .driver-info strong {
+            color: var(--text-dark);
+            display: inline-block;
+            min-width: 120px; /* Align labels */
+        }
+        .driver-info span {
+            font-weight: 600;
+        }
+
+
+        /* Media Queries for Responsiveness */
+        @media (max-width: 768px) {
+            body {
+                padding: 20px 10px;
+            }
+
+            .container {
+                padding: 20px;
+                border-radius: 10px;
+            }
+
+            h1 {
+                font-size: 24px;
+                margin-bottom: 20px;
+            }
+
+            h2 {
+                font-size: 20px;
+                margin-top: 25px;
+            }
+
+            .action-section {
+                flex-direction: column;
+                gap: 15px;
+                padding: 15px;
+            }
+
+            .action-section button {
+                width: 100%;
+                font-size: 0.95rem;
+                padding: 10px 15px;
+            }
+
+            .report-grid {
+                grid-template-columns: 1fr; /* Stack cards on small screens */
+                gap: 15px;
+            }
+
+            .report-card {
+                padding: 15px;
+            }
+
+            .report-card p {
+                font-size: 1.8em;
+            }
+
+            .driver-card {
+                padding: 15px;
+                gap: 10px;
+            }
+            .driver-info h3 {
+                font-size: 1.1em;
+            }
+            .driver-info p {
+                font-size: 0.9em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 20px;
+            }
+            h2 {
+                font-size: 18px;
+            }
+            .report-card p {
+                font-size: 1.5em;
+            }
+            .driver-info strong {
+                min-width: 90px;
+            }
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <h1>Sürücü İdarəetmə Paneli</h1>
-        <!-- <div class="action-section"
-            style="margin-top: 30px; padding: 20px; background-color: #f0f0f0; border-radius: 8px;">
-            <h2>Sürücü Verilerini Sıfırla</h2>
-            <button onclick="resetAllDriverDailyStats()"
-                style="background-color: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">
-                Günlük Qazanc və Sifariş Saylarını Sıfırla
+        <h1><i class="fas fa-chart-line"></i> Sürücü İdarəetmə Paneli</h1>
+
+        <div class="action-section">
+            <button onclick="resetAllDriverDailyStats()" class="reset-button">
+                <i class="fas fa-redo"></i> Günlük Statistikaları Sıfırla
             </button>
-        </div> -->
-        <div class="action-section"
-            style="margin-top: 30px; padding: 20px; background-color: #f0f0f0; border-radius: 8px;">
-            <!-- <h2>Sürücü Verilerini Sıfırla</h2> -->
-            <button onclick="resetAllDriverDailyStats()"
-                style="background-color: blue; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">
-                Sıfırla
-            </button>
-            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ccc;">
-            <!-- <h2>Bütün Siparişləri Sil</h2> -->
-            <button onclick="deleteAllOrders()"
-                style="background-color: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">
-                Bitir
+            <button onclick="deleteAllOrders()">
+                <i class="fas fa-trash-alt"></i> Bütün Sifarişləri Bitir
             </button>
         </div>
 
         <div class="report-section">
-            <h2>Ümumi Hesabatlar</h2>
+            <h2><i class="fas fa-chart-bar"></i> Ümumi Hesabatlar</h2>
             <div class="report-grid">
                 <div class="report-card">
                     <h3>Ümumi Günlük Sifariş Sayı</h3>
@@ -197,22 +348,6 @@
                     <h3>Ümumi Günlük Qazanc</h3>
                     <p id="total-daily-earnings">0.00 AZN</p>
                 </div>
-                <!-- <div class="report-card">
-                    <h3>Ümumi Həftəlik Sifariş Sayı</h3>
-                    <p id="total-weekly-orders">Hesablanır...</p>
-                </div> -->
-                <!-- <div class="report-card">
-                    <h3>Ümumi Həftəlik Qazanc</h3>
-                    <p id="total-weekly-earnings">Hesablanır... AZN</p>
-                </div> -->
-                <!-- <div class="report-card">
-                    <h3>Ümumi Aylıq Sifariş Sayı</h3>
-                    <p id="total-monthly-orders">Hesablanır...</p>
-                </div> -->
-                <!-- <div class="report-card">
-                    <h3>Ümumi Aylıq Qazanc</h3>
-                    <p id="total-monthly-earnings">Hesablanır... AZN</p>
-                </div> -->
                 <div class="report-card">
                     <h3>Ümumi Günlük Qazancın 15%-i</h3>
                     <p id="total-daily-earnings-15-percent">0.00 AZN</p>
@@ -222,183 +357,147 @@
 
         <div id="notification" class="notification"></div>
 
-        <h2>Sürücü Siyahısı</h2>
+        <h2><i class="fas fa-users-cog"></i> Sürücü Siyahısı</h2>
         <div id="drivers-list">
-            <% if (drivers && drivers.length> 0) { %>
-                <% drivers.forEach(driver=> { %>
+            <% if (drivers && drivers.length > 0) { %>
+                <% drivers.forEach(driver => { %>
                     <div class="driver-card" data-driver-id="<%= driver._id %>">
                         <div class="driver-info">
                             <h3>
-                                <%= driver.firstName %>
-                                    <%= driver.lastName %> (<%= driver.atWork ? 'İşdədir' : 'İşdə deyil' %>)
+                                <i class="fas fa-user-circle"></i> <%= driver.firstName %> <%= driver.lastName %>
+                                (<%= driver.atWork ? 'İşdədir' : 'İşdə deyil' %>)
                             </h3>
-                            <p>Mövcud Balans: <span id="limit-<%= driver._id %>">
-                                    <%= driver.limit !==null ? driver.limit : 'Təyin olunmayıb' %>
-                                </span></p>
-                            <p>Günlük Sifariş Sayı: <span id="daily-order-count-<%= driver._id %>">
-                                    <%= driver.dailyOrderCount || 0 %>
-                                </span></p>
-                            <p>Günlük Qazanc: <span id="daily-earnings-<%= driver._id %>">
-                                    <%= (driver.dailyEarnings || 0).toFixed(2) %> AZN
-                                </span></p>
+                            <p><strong>Mövcud Balans:</strong> <span id="limit-<%= driver._id %>">
+                                <%= driver.limit !== null ? driver.limit : 'Təyin olunmayıb' %>
+                            </span></p>
+                            <p><strong>Günlük Sifariş Sayı:</strong> <span id="daily-order-count-<%= driver._id %>">
+                                <%= driver.dailyOrderCount || 0 %>
+                            </span></p>
+                            <p><strong>Günlük Qazanc:</strong> <span id="daily-earnings-<%= driver._id %>">
+                                <%= (driver.dailyEarnings || 0).toFixed(2) %> AZN
+                            </span></p>
                         </div>
-                        <!-- <div class="driver-actions">
-                            <input type="number" id="limit-input-<%= driver._id %>" placeholder="Yeni Limit"
-                                step="0.01">
-                            <button onclick="updateDriverField('<%= driver._id %>', 'limit')">Limiti Yenilə</button>
-
-                            <input type="number" id="order-count-input-<%= driver._id %>"
-                                placeholder="Yeni Sifariş Sayı" step="1">
-                            <button onclick="updateDriverField('<%= driver._id %>', 'dailyOrderCount')">Sifariş Sayını
-                                Yenilə</button>
-
-                            <input type="number" id="earnings-input-<%= driver._id %>" placeholder="Yeni Qazanc"
-                                step="0.01">
-                            <button onclick="updateDriverField('<%= driver._id %>', 'dailyEarnings')">Qazancı
-                                Yenilə</button>
-                        </div> -->
-                    </div>
-                    <% }); %>
-                        <% } else { %>
-                            <p>Heç sürücü tapılmadı.</p>
-                            <% } %>
+                        </div>
+                <% }); %>
+            <% } else { %>
+                <p style="text-align: center; color: var(--text-light);">Heç sürücü tapılmadı.</p>
+            <% } %>
         </div>
 
     </div>
 
     <script>
-        // drivers.ejs üçün JavaScript kodu
-
         const BASE_API_URL = '/api/drivers';
         const BASE_ORDERS_API_URL = '/api/taxis';
 
         function showNotification(message, isSuccess = true) {
             const notificationDiv = document.getElementById('notification');
             notificationDiv.textContent = message;
+            notificationDiv.className = `notification ${isSuccess ? 'success' : 'error'}`;
             notificationDiv.style.display = 'block';
-            notificationDiv.style.backgroundColor = isSuccess ? '#d4edda' : '#f8d7da';
-            notificationDiv.style.color = isSuccess ? '#155724' : '#721c24';
-            notificationDiv.style.borderColor = isSuccess ? '#c3e6cb' : '#f5c6cb';
 
             setTimeout(() => {
                 notificationDiv.style.display = 'none';
             }, 3000);
         }
 
-        async function updateDriverField(driverId, field) {
-            let inputElement;
-            let value;
-            const endpoint = `${BASE_API_URL}/${driverId}/update-stats`; // Yeni ümumi yeniləmə endpointi
-            let fieldNameAZ;
-            let displayElementId;
+        // updateDriverField fonksiyonu kaldırıldı, çünkü HTML'den input alanları ve butonları kaldırıldı.
+        // Eger sürücülerin tek tek sahalarını güncelleyecek bir arayüze ihtiyacınız olursa,
+        // bu fonksiyonu ve ilgili HTML kısımlarını daha uygun bir yere (mesela modallar) taşıyaraq yeniden ekleyebilirsiniz.
 
-            if (field === 'limit') {
-                inputElement = document.getElementById(`limit-input-${driverId}`);
-                value = parseFloat(inputElement.value);
-                fieldNameAZ = 'Limit';
-                displayElementId = `limit-${driverId}`;
-            } else if (field === 'dailyOrderCount') {
-                inputElement = document.getElementById(`order-count-input-${driverId}`);
-                value = parseInt(inputElement.value);
-                fieldNameAZ = 'Günlük Sifariş Sayı';
-                displayElementId = `daily-order-count-${driverId}`;
-            } else if (field === 'dailyEarnings') {
-                inputElement = document.getElementById(`earnings-input-${driverId}`);
-                value = parseFloat(inputElement.value);
-                fieldNameAZ = 'Günlük Qazanc';
-                displayElementId = `daily-earnings-${driverId}`;
-            } else {
-                showNotification('Naməlum sahə!', false);
-                return;
-            }
-
-            if (isNaN(value) || value < 0) {
-                showNotification(`Zəhmət olmasa ${fieldNameAZ} üçün etibarlı bir rəqəm daxil edin.`, false);
-                return;
-            }
-
-            try {
-                const updateData = {};
-                updateData[field] = value; // Dinamik olaraq obyekti formalaşdırırıq
-
-                const response = await fetch(endpoint, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(updateData),
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    // Update the displayed value directly from the fetched data
-                    document.getElementById(displayElementId).textContent = (field === 'dailyEarnings' ? data[field].toFixed(2) + ' AZN' : data[field]);
-                    showNotification(`${fieldNameAZ} uğurla yeniləndi.`);
-                    // inputElement.value = ''; // Bu sətri **sildik**! Input sahəsini təmizləmirik
-                    fetchDriverStats(); // Yenilədikdən sonra bütün sürücü statistikalarını yenidən çək
-                    calculateOverallReports(); // Ümumi hesabatları da yenilə
-                } else {
-                    showNotification(data.msg || `${fieldNameAZ} yenilənərkən bir xəta baş verdi.`, false);
-                }
-            } catch (error) {
-                console.error(`${fieldNameAZ} yeniləmə xətası:`, error);
-                showNotification('Server ilə əlaqədə bir xəta baş verdi.', false);
-            }
-        }
-
-        // Sürücülərin mövcud limit, günlük sifariş sayı və günlük qazancını gətirmə
         async function fetchDriverStats() {
             const driversList = document.getElementById('drivers-list');
-            const driverCards = driversList.querySelectorAll('.driver-card');
-
-            try {
-                const allDriversResponse = await fetch(`${BASE_API_URL}/get-drivers`);
-                if (!allDriversResponse.ok) {
-                    console.error('Bütün sürücüləri çəkərkən xəta baş verdi:', allDriversResponse.statusText);
-                    return;
-                }
-                const allDrivers = await allDriversResponse.json();
-
-                for (const card of driverCards) {
-                    const driverId = card.dataset.driverId;
-                    const driverData = allDrivers.find(d => d._id === driverId);
-
-                    if (driverData) {
-                        // Null və ya undefined dəyərlər üçün 0 təyin edirik
-                        document.getElementById(`limit-${driverId}`).textContent = driverData.limit !== null ? driverData.limit : 'Təyin olunmayıb';
-                        document.getElementById(`daily-order-count-${driverId}`).textContent = driverData.dailyOrderCount || 0;
-                        document.getElementById(`daily-earnings-${driverId}`).textContent = `${(driverData.dailyEarnings || 0).toFixed(2)} AZN`;
-                    } else {
-                        console.warn(`Driver with ID ${driverId} not found in fetched data.`);
+            // Check if driversList has child elements (i.e., drivers are rendered from EJS)
+            if (driversList.children.length === 0 || driversList.children[0].tagName === 'P') {
+                // If no drivers initially or only "Heç sürücü tapılmadı." text, try to fetch and render them
+                try {
+                    const response = await fetch(`${BASE_API_URL}/get-drivers`);
+                    if (!response.ok) {
+                        console.error('Bütün sürücüləri çəkərkən xəta baş verdi:', response.statusText);
+                        return;
                     }
+                    const drivers = await response.json();
+                    if (drivers.length > 0) {
+                        driversList.innerHTML = ''; // Clear "No drivers found" message
+                        drivers.forEach(driver => {
+                            const driverCard = document.createElement('div');
+                            driverCard.className = 'driver-card';
+                            driverCard.dataset.driverId = driver._id;
+                            driverCard.innerHTML = `
+                                <div class="driver-info">
+                                    <h3>
+                                        <i class="fas fa-user-circle"></i> ${driver.firstName} ${driver.lastName}
+                                        (${driver.atWork ? 'İşdədir' : 'İşdə deyil'})
+                                    </h3>
+                                    <p><strong>Mövcud Balans:</strong> <span id="limit-${driver._id}">
+                                        ${driver.limit !== null ? driver.limit : 'Təyin olunmayıb'}
+                                    </span></p>
+                                    <p><strong>Günlük Sifariş Sayı:</strong> <span id="daily-order-count-${driver._id}">
+                                        ${driver.dailyOrderCount || 0}
+                                    </span></p>
+                                    <p><strong>Günlük Qazanc:</strong> <span id="daily-earnings-${driver._id}">
+                                        ${(driver.dailyEarnings || 0).toFixed(2)} AZN
+                                    </span></p>
+                                </div>
+                            `;
+                            driversList.appendChild(driverCard);
+                        });
+                    } else {
+                        driversList.innerHTML = '<p style="text-align: center; color: var(--text-light);">Heç sürücü tapılmadı.</p>';
+                    }
+                } catch (error) {
+                    console.error('Sürücü məlumatlarını alarkən şəbəkə xətası:', error);
+                    driversList.innerHTML = '<p style="text-align: center; color: var(--danger-color);">Sürücüləri gətirərkən xəta baş verdi.</p>';
                 }
-            } catch (error) {
-                console.error('Sürücü məlumatlarını alarkən şəbəkə xətası:', error);
+            } else {
+                // If drivers are already rendered, just update their stats
+                const driverCards = driversList.querySelectorAll('.driver-card');
+                try {
+                    const allDriversResponse = await fetch(`${BASE_API_URL}/get-drivers`);
+                    if (!allDriversResponse.ok) {
+                        console.error('Bütün sürücüləri çəkərkən xəta baş verdi:', allDriversResponse.statusText);
+                        return;
+                    }
+                    const allDrivers = await allDriversResponse.json();
+
+                    for (const card of driverCards) {
+                        const driverId = card.dataset.driverId;
+                        const driverData = allDrivers.find(d => d._id === driverId);
+
+                        if (driverData) {
+                            document.getElementById(`limit-${driverId}`).textContent = driverData.limit !== null ? driverData.limit : 'Təyin olunmayıb';
+                            document.getElementById(`daily-order-count-${driverId}`).textContent = driverData.dailyOrderCount || 0;
+                            document.getElementById(`daily-earnings-${driverId}`).textContent = `${(driverData.dailyEarnings || 0).toFixed(2)} AZN`;
+                        } else {
+                            // If a driver exists in DOM but not in fetched data (e.g., deleted), remove it
+                            card.remove();
+                            console.warn(`Driver with ID ${driverId} not found in fetched data and removed from DOM.`);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Sürücü məlumatlarını alarkən şəbəkə xətası:', error);
+                }
             }
         }
 
-        // drivers.ejs dosyanızdaki <script> etiketi içinde
+
         async function resetAllDriverDailyStats() {
-            if (!confirm('Əminsiniz? Bütün sürücülərin günlük qazanc və sifariş sayları sıfırlanacaq!')) {
-                return; // Kullanıcı iptal ettiyse çık
+            if (!confirm('Əminsiniz? Bütün sürücülərin günlük qazanc və sifariş sayları sıfırlanacaq! Bu geri alınmaz bir əməliyyatdır!')) {
+                return;
             }
 
             try {
                 const response = await fetch(`${BASE_API_URL}/reset-daily-stats`, {
-                    method: 'PUT', // PUT veya POST kullanabiliriz, burada bir güncelleme olduğu için PUT daha uygun
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    // Gövdeye herhangi bir veri göndermemize gerek yok
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
                     showNotification(data.msg, true);
-                    fetchDriverStats(); // Sıfırlandıktan sonra sürücü bilgilerini yenile
-                    calculateOverallReports(); // Ümumi hesabatları da yenile
+                    fetchDriverStats();
+                    calculateOverallReports();
                 } else {
                     showNotification(data.msg || 'Günlük statistika sıfırlanarkən bir xəta baş verdi.', false);
                 }
@@ -408,11 +507,10 @@
             }
         }
 
-        // drivers.ejs dosyanızdaki <script> etiketi içinde
         async function calculateOverallReports() {
             let totalDailyOrders = 0;
             let totalDailyEarnings = 0;
-            let totalDailyEarnings15Percent = 0; // Yeni değişken
+            let totalDailyEarnings15Percent = 0;
 
             try {
                 const allDriversResponse = await fetch(`${BASE_API_URL}/get-drivers`);
@@ -422,7 +520,6 @@
                         totalDailyOrders += (driver.dailyOrderCount || 0);
                         totalDailyEarnings += (driver.dailyEarnings || 0);
                     }
-                    // %15'i hesapla
                     totalDailyEarnings15Percent = totalDailyEarnings * 0.15;
                 } else {
                     console.error("Bütün sürücülər alınarkən xəta baş verdi (hesabatlar üçün).");
@@ -430,15 +527,13 @@
 
                 document.getElementById('total-daily-orders').textContent = totalDailyOrders;
                 document.getElementById('total-daily-earnings').textContent = `${totalDailyEarnings.toFixed(2)} AZN`;
-                // Yeni eklediğimiz alanı güncelle
                 document.getElementById('total-daily-earnings-15-percent').textContent = `${totalDailyEarnings15Percent.toFixed(2)} AZN`;
 
-                // Diğer haftalık ve aylık fonksiyon çağrıları aynı kalacak
-                async function fetchOverallWeeklyStats() { /* ... */ }
-                async function fetchOverallMonthlyStats() { /* ... */ }
-
-                fetchOverallWeeklyStats();
-                fetchOverallMonthlyStats();
+                // Haftalık ve Aylık raporlar için fonksiyonlar burada çağrılabilir (eğer implemente olunsa)
+                // async function fetchOverallWeeklyStats() { /* ... */ }
+                // async function fetchOverallMonthlyStats() { /* ... */ }
+                // fetchOverallWeeklyStats();
+                // fetchOverallMonthlyStats();
 
             } catch (error) {
                 console.error('Ümumi hesabatlar hesablanarkən xəta:', error);
@@ -447,25 +542,23 @@
 
         async function deleteAllOrders() {
             if (!confirm('Əminsiniz? Bütün sifarişlər silinəcək! Bu geri alınmaz bir əməliyyatdır!')) {
-                return; // Kullanıcı iptal ettiyse çık
+                return;
             }
 
             try {
                 const response = await fetch(`${BASE_ORDERS_API_URL}/delete-all-requests`, {
                     method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
                     showNotification(data.msg, true);
-                    // Tüm siparişler silindiği için, eğer siparişleri gösteren bir liste varsa onu da boşaltmalısınız.
-                    // drivers.ejs sayfasında direkt sipariş listesi yoksa bu satıra gerek kalmaz.
-                    // Örneğin: document.getElementById('orders-list').innerHTML = '<p>Heç sifariş tapılmadı.</p>';
-                    // Eğer varsa, siparişleri yeniden yükleyen bir fonksiyonu çağırın.
+                    // Siparişler silindikten sonra, sipariş paneli güncellenmeli.
+                    // Eğer burada sipariş listesi varsa onu boşalt.
+                    // Ya da siparişlerin gösterildiği ana sayfayı yenileyen bir çağrı yapabilirsin.
+                    // Örn: window.location.reload(); (tüm sayfayı yenilemek için)
                 } else {
                     showNotification(data.msg || 'Bütün sifarişlər silinərkən bir xəta baş verdi.', false);
                 }
@@ -476,10 +569,11 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            fetchDriverStats();
-            calculateOverallReports();
-            setInterval(fetchDriverStats, 30000); // Hər 30 saniyədə bir yeniləyir
-            setInterval(calculateOverallReports, 60000); // Hər 60 saniyədə bir yeniləyir
+            fetchDriverStats(); // Sürücü statistikalarını ilk yükləmədə gətir
+            calculateOverallReports(); // Ümumi hesabatları ilk yükləmədə gətir
+
+            setInterval(fetchDriverStats, 30000); // Hər 30 saniyədə bir sürücü statistikalarını yenilə
+            setInterval(calculateOverallReports, 60000); // Hər 60 saniyədə bir ümumi hesabatları yenilə
         });
     </script>
 </body>
