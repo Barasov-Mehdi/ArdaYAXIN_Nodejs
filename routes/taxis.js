@@ -931,51 +931,97 @@ router.post('/cancel-order', async (req, res) => {
   }
 });
 
-
 router.post('/reassign-order', async (req, res) => {
   const { requestId } = req.body;
-  console.log(`[Server] Obşiyə At istəyi alındı. Sifariş ID: ${requestId}`);
+  console.log(`[Server] Yenile isteği alındı. Sipariş ID: ${requestId}`);
 
   try {
-    const orderToReassign = await TaxiRequest.findById(requestId);
-    if (!orderToReassign) {
-      return res.status(404).json({ message: 'Sifariş tapılmadı.' });
+    const order = await TaxiRequest.findById(requestId);
+    if (!order) {
+      return res.status(404).json({ message: 'Sipariş bulunamadı.' });
     }
 
-    const reassignedOrderData = {
-      originalOrderId: orderToReassign._id,
-      currentAddress: orderToReassign.currentAddress,
-      destinationAddress: orderToReassign.destinationAddress,
-      price: orderToReassign.price,
-      userId: orderToReassign.userId,
-      tel: orderToReassign.tel,
-      additionalInfo: orderToReassign.additionalInfo || ''
+    // Önceki sürücüyü serbest bırak
+    if (order.driverId) {
+      await Driver.findByIdAndUpdate(order.driverId, { onOrder: false });
+      console.log(`[Server] Eski sürücü serbest bırakıldı: ${order.driverId}`);
+    }
+
+    // Siparişi boşa düşür
+    order.isTaken = false;
+    order.driverId = null;           // Önce sıfırla, sonra yeni sürücü atayacağız
+    order.driverDetails = null;
+    order.time = null;
+    order.atAddress = false;
+    order.takenCustomer = false;
+    order.isConfirmed = false;
+
+    await order.save();
+
+    // Yeni sürücü seçmek için uygun sürücüleri bul
+    const availableDrivers = await Driver.find({
+      onOrder: false,
+      atWork: true,
+      'location.lat': { $exists: true },
+      'location.lan': { $exists: true }
+    });
+
+    if (availableDrivers.length === 0) {
+      console.log('[Server] Uygun sürücü bulunamadı, sipariş boşa düştü.');
+      return res.status(200).json({ message: 'Sipariş boşa düştü, uygun sürücü yok.' });
+    }
+
+    // Sipariş konumunu al
+    const orderLat = order.currentAddress.latitude;
+    const orderLon = order.currentAddress.longitude;
+
+    // En yakın sürücüyü bulmak için mesafe fonksiyonu
+    function getDistanceSq(lat1, lon1, lat2, lon2) {
+      const dLat = lat1 - lat2;
+      const dLon = lon1 - lon2;
+      return dLat * dLat + dLon * dLon;
+    }
+
+    let nearestDriver = null;
+    let nearestDistance = Infinity;
+
+    for (const driver of availableDrivers) {
+      if (!driver.location || typeof driver.location.lat !== 'number' || typeof driver.location.lan !== 'number') continue;
+      const dist = getDistanceSq(driver.location.lat, driver.location.lan, orderLat, orderLon);
+      if (dist < nearestDistance) {
+        nearestDistance = dist;
+        nearestDriver = driver;
+      }
+    }
+
+    if (!nearestDriver) {
+      console.log('[Server] Uygun lokasyona sahip sürücü bulunamadı.');
+      return res.status(200).json({ message: 'Uygun sürücü bulunamadı.' });
+    }
+
+    // Yeni sürücüye ata
+    order.driverId = nearestDriver._id;
+    order.driverDetails = {
+      firstName: nearestDriver.firstName,
+      carPlate: nearestDriver.carPlate
     };
+    order.isTaken = false;  // Sipariş hala serbest (yenileme mantığıyla)
+    await order.save();
 
-    if (orderToReassign.destination2 && orderToReassign.destination2.text) {
-      reassignedOrderData.destination2 = orderToReassign.destination2;
-    }
+    // Yeni sürücüyü siparişli olarak işaretle
+    nearestDriver.onOrder = true;
+    await nearestDriver.save();
 
-    if (orderToReassign.driverDetails) {
-      reassignedOrderData.previousDriverDetails = orderToReassign.driverDetails;
-    }
+    console.log(`[Server] Sipariş yeni sürücüye atandı: ${nearestDriver._id}`);
 
-    const reassignedOrder = new ReassignedOrder(reassignedOrderData);
-    await reassignedOrder.save();
+    return res.status(200).json({ message: 'Sipariş başarıyla yeniden atandı.', driverId: nearestDriver._id });
 
-    orderToReassign.isTaken = false;
-    orderToReassign.driverId = null;
-    orderToReassign.driverDetails = null;
-    orderToReassign.time = null;
-    orderToReassign.atAddress = false;
-    orderToReassign.takenCustomer = false;
-    orderToReassign.isConfirmed = false;
-    await orderToReassign.save();
-
-    res.status(200).json({ message: 'Sifariş uğurla obşiyə atıldı və qeydə alındı.' });
   } catch (error) {
-    console.error('[Server] Sifariş obşiyə atılarkən xəta baş verdi:', error);
-    res.status(500).json({ message: 'Sifariş obşiyə atılarkən bir xəta baş verdi.', error: error.message });
+    console.error('[Server] Sipariş yeniden atama hatası:', error);
+    return res.status(500).json({ message: 'Sunucu hatası oluştu.', error: error.message });
   }
 });
+
+
+
 module.exports = router;

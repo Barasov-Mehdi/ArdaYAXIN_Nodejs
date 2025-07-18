@@ -46,6 +46,7 @@ const taxiRequestSchema = new mongoose.Schema({
         type: [mongoose.Schema.Types.ObjectId], // sadece bu şoförler siparişi görebilir
         default: []
     },
+    rejectedBy: { type: [String], default: [] },
     accepted: {
         type: Boolean,
         default: false
