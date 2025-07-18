@@ -26,47 +26,43 @@ function getDistanceKm(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = deg2rad(lat2 - lat1);
   const dLon = deg2rad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
+  const a = Math.sin(dLat / 2) ** 2 +
     Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
     Math.sin(dLon / 2) ** 2;
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c; // BU DOĞRU
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
+
 // Sürücü Seçme
-async function selectBestDriver({ price, orderLat, orderLon }) {
-  let drivers = await Driver.find({
-    atWork: true,
-    onOrder: false,
-    'location.lat': { $ne: null },
-    'location.lan': { $ne: null }
-  });
+async function selectBestDriver({ price, orderLat, orderLon, candidateDrivers = null }) {
+  let drivers = candidateDrivers;
+  if (!drivers) {
+    drivers = await Driver.find({
+      atWork: true,
+      onOrder: false,
+      'location.lat': { $ne: null },
+      'location.lan': { $ne: null }
+    });
+  }
 
   drivers = drivers.filter(hasValidCoords);
   if (!drivers.length) return null;
 
   if (price <= 2) {
-    // SADECE EN YAKIN
     return drivers.reduce((best, d) => {
       const dist = getDistanceKm(orderLat, orderLon, d.location.lat, d.location.lan);
-      if (!best || dist < best.dist) return { driver: d, dist };
-      return best;
-    }, null)?.driver || null;
+      return !best || dist < best.dist ? { driver: d, dist } : best;
+    }, null).driver;
   }
 
-  // PRICE > 2: önce max 5 yıldızlılar
   const maxFive = Math.max(...drivers.map(getTotalFiveStar));
-  let pool = maxFive > 0
-    ? drivers.filter(d => getTotalFiveStar(d) === maxFive)
-    : drivers;
+  let pool = maxFive === 0 ? drivers : drivers.filter(d => getTotalFiveStar(d) === maxFive);
 
-  // Havuzdan en yakın
   return pool.reduce((best, d) => {
     const dist = getDistanceKm(orderLat, orderLon, d.location.lat, d.location.lan);
-    if (!best || dist < best.dist) return { driver: d, dist };
-    return best;
-  }, null)?.driver || null;
+    return !best || dist < best.dist ? { driver: d, dist } : best;
+  }, null).driver;
 }
+
 // Bildirim
 async function sendOrderFCMToDriver(driver, order) {
   if (!driver?.fcmToken) return;
