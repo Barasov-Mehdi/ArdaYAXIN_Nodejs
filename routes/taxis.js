@@ -46,9 +46,6 @@ function getDistanceKm(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
-// ------------------------------------------------------------
-// ASIL SÜRÜCÜ SEÇİM FONKSİYONU (KURALLARINA GÖRE)
-// ------------------------------------------------------------
 async function selectBestDriver({ price, orderLat, orderLon }) {
   let drivers = await Driver.find({
     atWork: true,
@@ -94,11 +91,6 @@ async function selectBestDriver({ price, orderLat, orderLon }) {
   return best;
 }
 
-
-
-// ------------------------------------------------------------
-// ROUTE: SİPARİŞ OLUŞTUR
-// ------------------------------------------------------------
 router.post('/request', async (req, res) => {
   try {
     const {
@@ -560,7 +552,6 @@ router.post('/takeOrder', async (req, res) => {
   }
 });
 
-
 router.get('/userRequests/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
@@ -860,10 +851,35 @@ router.post('/cancel-order', async (req, res) => {
   try {
     const orderToCancel = await TaxiRequest.findById(requestId);
     if (!orderToCancel) {
-      console.warn(`[Server] Ləğv ediləcək sifariş tapılmadı. Sifariş ID: ${requestId}`);
+      console.warn(`[Server] Ləğv ediləcək sifariş tapılmadı. ID: ${requestId}`);
       return res.status(404).json({ message: 'Sifariş tapılmadı.' });
     }
 
+    // --- SÜRÜCÜ AZAD ETMƏ ---
+    // Prioritet: order.driverId -> sonra order.driverDetails.id
+    let driverId = orderToCancel.driverId;
+    if (!driverId && orderToCancel.driverDetails && orderToCancel.driverDetails.id) {
+      driverId = orderToCancel.driverDetails.id; // string
+    }
+
+    let updatedDriver = null;
+    if (driverId) {
+      console.log(`[Server] Sifariş ləğv edilir, sürücü azad edilir: ${driverId}`);
+      updatedDriver = await Driver.findByIdAndUpdate(
+        driverId,
+        { onOrder: false },
+        { new: true, runValidators: false }
+      );
+      if (!updatedDriver) {
+        console.warn(`[Server] Driver tapılmadı və ya update olunmadı: ${driverId}`);
+      } else {
+        console.log(`[Server] Driver onOrder -> ${updatedDriver.onOrder}`);
+      }
+    } else {
+      console.log('[Server] Bu sifariş üçün driverId tapılmadı, sürücü azad edilmədi.');
+    }
+
+    // --- LƏĞV EDİLƏNLƏR ARXİVİ ---
     const canceledOrderData = {
       originalOrderId: orderToCancel._id,
       currentAddress: orderToCancel.currentAddress,
@@ -872,32 +888,46 @@ router.post('/cancel-order', async (req, res) => {
       userId: orderToCancel.userId,
       tel: orderToCancel.tel,
       additionalInfo: orderToCancel.additionalInfo || '',
-      reason: 'User Canceled'
+      reason: 'User Canceled',
     };
 
     if (orderToCancel.destination2 && orderToCancel.destination2.text) {
       canceledOrderData.destination2 = orderToCancel.destination2;
     }
 
-    if (
-      orderToCancel.driverDetails &&
-      typeof orderToCancel.driverDetails.toObject === 'function'
-    ) {
-      const driverObj = orderToCancel.driverDetails.toObject();
-      if (driverObj && Object.keys(driverObj).length > 0) {
-        canceledOrderData.driverDetails = driverObj;
+    // Sadəcə məlumat üçün saxlayırıq (populate etməsək belə)
+    if (orderToCancel.driverDetails) {
+      canceledOrderData.driverDetails = orderToCancel.driverDetails;
+    } else if (driverId) {
+      // Əlavə: əgər driverDetails yoxdursa, driver-ı qısa məlumatla doldura bilərik
+      const d = await Driver.findById(driverId).lean();
+      if (d) {
+        canceledOrderData.driverDetails = {
+          id: d._id,
+          firstName: d.firstName,
+          carPlate: d.carPlate,
+          phone: d.phone,
+        };
       }
     }
 
-    const canceledOrder = new CanceledOrder(canceledOrderData);
-    await canceledOrder.save();
+    await new CanceledOrder(canceledOrderData).save();
 
+    // --- Əsas sifarişi sil ---
     await TaxiRequest.findByIdAndDelete(requestId);
 
-    res.status(200).json({ message: 'Sifariş uğurla ləğv edildi və qeydə alındı.' });
+    return res.status(200).json({
+      message: 'Sifariş ləğv edildi.',
+      driverReleased: !!updatedDriver,
+      driverOnOrder: updatedDriver ? updatedDriver.onOrder : undefined,
+    });
+
   } catch (error) {
-    console.error('[Server] Sifariş ləğv edilərkən xəta baş verdi:', error);
-    res.status(500).json({ message: 'Sifariş ləğv edilərkən bir xəta baş verdi.', error: error.message });
+    console.error('[Server] Sifariş ləğv edilərkən xəta:', error);
+    return res.status(500).json({
+      message: 'Sifariş ləğv edilərkən bir xəta baş verdi.',
+      error: error.message,
+    });
   }
 });
 
