@@ -9,8 +9,6 @@ const CanceledOrder = require('../models/CanceledOrder');
 const ReassignedOrder = require('../models/ReassignedOrder');
 
 
-// ========== Yardımcı Fonksiyonlar ==========
-
 function getTotalFiveStar(driver) {
   if (!driver || !driver.ratingCount) return 0;
   return Number(driver.ratingCount[5] || driver.ratingCount['5'] || 0);
@@ -23,14 +21,52 @@ function hasValidCoords(d) {
 
 function deg2rad(deg) { return deg * (Math.PI / 180); }
 function getDistanceKm(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const dLat = deg2rad(lat2 - lat1);
-  const dLon = deg2rad(lon2 - lon1);
-  const a = Math.sin(dLat / 2) ** 2 +
-    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
-    Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const a = 6378137; // WGS-84 major axis (metre)
+  const b = 6356752.3142; // WGS-84 minor axis
+  const f = 1 / 298.257223563; // Flattening
+
+  const L = deg2rad(lon2 - lon1);
+  const U1 = Math.atan((1 - f) * Math.tan(deg2rad(lat1)));
+  const U2 = Math.atan((1 - f) * Math.tan(deg2rad(lat2)));
+  const sinU1 = Math.sin(U1), cosU1 = Math.cos(U1);
+  const sinU2 = Math.sin(U2), cosU2 = Math.cos(U2);
+
+  let lambda = L, lambdaP, iterLimit = 100;
+  let sinSigma, cosSigma, sigma, sinAlpha, cosSqAlpha, cos2SigmaM, C;
+
+  do {
+    const sinLambda = Math.sin(lambda);
+    const cosLambda = Math.cos(lambda);
+    sinSigma = Math.sqrt(
+      (cosU2 * sinLambda) ** 2 +
+      (cosU1 * sinU2 - sinU1 * cosU2 * cosLambda) ** 2
+    );
+    if (sinSigma === 0) return 0; // aynı nokta
+    cosSigma = sinU1 * sinU2 + cosU1 * cosU2 * cosLambda;
+    sigma = Math.atan2(sinSigma, cosSigma);
+    sinAlpha = (cosU1 * cosU2 * sinLambda) / sinSigma;
+    cosSqAlpha = 1 - sinAlpha * sinAlpha;
+    cos2SigmaM = cosSigma - (2 * sinU1 * sinU2) / cosSqAlpha;
+    if (isNaN(cos2SigmaM)) cos2SigmaM = 0; // kutuplar
+    C = (f / 16) * cosSqAlpha * (4 + f * (4 - 3 * cosSqAlpha));
+    lambdaP = lambda;
+    lambda = L + (1 - C) * f * sinAlpha *
+      (sigma + C * sinSigma * (cos2SigmaM + C * cosSigma * (-1 + 2 * cos2SigmaM ** 2)));
+  } while (Math.abs(lambda - lambdaP) > 1e-12 && --iterLimit > 0);
+
+  if (iterLimit === 0) return NaN; // yakınsamadı
+
+  const uSq = cosSqAlpha * ((a ** 2 - b ** 2) / (b ** 2));
+  const A = 1 + (uSq / 16384) * (4096 + uSq * (-768 + uSq * (320 - 175 * uSq)));
+  const B = (uSq / 1024) * (256 + uSq * (-128 + uSq * (74 - 47 * uSq)));
+  const deltaSigma = B * sinSigma * (cos2SigmaM + (B / 4) *
+    (cosSigma * (-1 + 2 * cos2SigmaM ** 2) -
+     (B / 6) * cos2SigmaM * (-3 + 4 * sinSigma ** 2) * (-3 + 4 * cos2SigmaM ** 2)));
+
+  const s = b * A * (sigma - deltaSigma); // mesafe metre
+  return s / 1000; // kilometre
 }
+
 
 // Sürücü Seçme
 async function selectBestDriver({ price, orderLat, orderLon, candidateDrivers = null }) {
@@ -149,7 +185,6 @@ async function autoReassignOrder(order) {
   await sendOrderFCMToDriver(nextDriver, order);
 }
 
-// ========== Routes ==========
 
 // Sipariş oluştur
 router.post('/request', async (req, res) => {
@@ -285,7 +320,6 @@ router.post('/orders/:orderId/reject', async (req, res) => {
   }
 });
 
-// ========== Arka Plan Kontrolü ==========
 
 setInterval(async () => {
   try {
