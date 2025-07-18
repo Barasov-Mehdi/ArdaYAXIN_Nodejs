@@ -1,132 +1,295 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="az">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Find User Orders</title>
-    <link rel="stylesheet" href="/assets/style.css">
+    <title>Sifarişlərə Bax / Sil</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f4;
-            color: #333;
+        /* General Styles */
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --info-color: #17a2b8;
+            --light-bg: #f8f9fa;
+            --dark-bg: #343a40;
+            --text-color: #333;
+            --white-color: #fff;
+            --border-color: #dee2e6;
+            --card-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--light-bg);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        /* Header (Optional, if you want a consistent header across pages) */
+        /*
+        header {
+            background-color: var(--dark-bg);
+            color: var(--white-color);
+            padding: 1rem 0;
+            text-align: center;
+            box-shadow: var(--card-shadow);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.2rem;
+            color: var(--primary-color);
+        }
+
+        header nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 1rem 0 0 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1.5rem;
+        }
+
+        header nav ul li a {
+            color: var(--white-color);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        header nav ul li a:hover,
+        header nav ul li a.active {
+            background-color: var(--primary-color);
+            color: var(--white-color);
+        }
+        */
+
         .container {
             max-width: 900px;
-            margin: 0 auto;
-            background: #fff;
-            padding: 20px 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin: 40px auto;
+            background: var(--white-color);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: var(--card-shadow);
         }
-        h1, h2 {
-            color: #0056b3;
+
+        h1,
+        h2 {
+            color: var(--primary-color);
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
+            font-size: 2.2rem;
         }
+
         .search-container {
             display: flex;
-            justify-content: center;
-            margin-bottom: 20px;
-            gap: 10px; /* Space between input and button */
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap; /* Allow wrapping on small screens */
         }
+
         .search-container input[type="text"] {
             flex-grow: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
         }
+
         .search-container button {
-            padding: 10px 15px;
-            background-color: #007bff;
-            color: white;
+            padding: 12px 20px;
+            background-color: var(--primary-color);
+            color: var(--white-color);
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
+
         .search-container button:hover {
             background-color: #0056b3;
+            transform: translateY(-2px);
         }
+
         .order-list {
             list-style: none;
             padding: 0;
         }
+
         .order-item {
-            background: #f9f9f9;
-            border: 1px solid #e1e1e1;
-            margin-bottom: 10px;
-            padding: 15px;
-            border-radius: 5px;
+            background: var(--light-bg);
+            border: 1px solid var(--border-color);
+            margin-bottom: 15px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
             display: flex;
             flex-direction: column;
-            position: relative; /* For positioning the delete button */
+            position: relative;
         }
+
         .order-info {
-            margin-bottom: 5px;
+            margin-bottom: 8px;
         }
+
         .order-info strong {
-            color: #333;
+            color: var(--text-color);
+            min-width: 120px; /* Align labels */
+            display: inline-block;
         }
+
         .order-info span {
-            color: #666;
+            color: var(--secondary-color);
             font-size: 0.95em;
         }
+
         .delete-btn {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            background-color: #dc3545;
+            top: 15px;
+            right: 15px;
+            background-color: var(--danger-color);
             color: white;
             border: none;
-            border-radius: 4px;
-            padding: 5px 10px;
+            border-radius: 6px;
+            padding: 8px 12px;
             cursor: pointer;
-            font-size: 0.85em;
-            transition: background-color 0.2s ease;
+            font-size: 0.9em;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
+
         .delete-btn:hover {
             background-color: #c82333;
+            transform: translateY(-1px);
         }
+
         .message {
             margin-top: 20px;
-            padding: 10px;
-            border-radius: 4px;
+            padding: 15px;
+            border-radius: 8px;
             text-align: center;
+            font-weight: 500;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
         }
+
         .message.success {
             background-color: #d4edda;
             color: #155724;
             border: 1px solid #c3e6cb;
         }
+
         .message.error {
             background-color: #f8d7da;
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
+
         .message.info {
             background-color: #d1ecf1;
             color: #0c5460;
             border: 1px solid #bee5eb;
         }
+
+        #noOrdersFound {
+            text-align: center;
+            color: var(--secondary-color);
+            margin-top: 20px;
+            font-style: italic;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .container {
+                margin: 20px auto;
+                padding: 20px;
+            }
+
+            h1, h2 {
+                font-size: 1.8rem;
+                margin-bottom: 20px;
+            }
+
+            .search-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .search-container button {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .order-item {
+                padding: 15px;
+            }
+
+            .order-info strong {
+                min-width: 90px;
+            }
+
+            .delete-btn {
+                position: static; /* Stack on smaller screens */
+                margin-top: 15px;
+                width: auto;
+                align-self: flex-end; /* Align to the right if space allows */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1, h2 {
+                font-size: 1.5rem;
+            }
+
+            .search-container input,
+            .search-container button {
+                font-size: 0.95rem;
+                padding: 10px;
+            }
+
+            .delete-btn {
+                font-size: 0.8em;
+                padding: 6px 10px;
+            }
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
-        <h1>Find User Orders</h1>
+        <h1><i class="fas fa-search"></i> İstifadəçi Sifarişlərini Axtar</h1>
 
         <div class="search-container">
-            <input type="text" id="userNameInput" placeholder="Enter User Name">
-            <button onclick="searchOrders()">Search Orders</button>
+            <input type="text" id="userNameInput" placeholder="Axtarmaq istədiyiniz İstifadəçi Adını daxil edin">
+            <button onclick="searchOrders()"><i class="fas fa-filter"></i> Digər Sifarişləri Göstər</button>
+            <button onclick="fetchAllOrders()" class="secondary-button"><i class="fas fa-list-alt"></i> Bütün Sifarişləri Göstər</button>
         </div>
 
         <div id="messageContainer" class="message" style="display: none;"></div>
 
-        <h2>Orders Found</h2>
+        <h2><i class="fas fa-clipboard-list"></i> Tapılan Sifarişlər</h2>
         <ul id="orderList" class="order-list">
-            <p id="noOrdersFound" style="display: none; text-align: center; color: #777;">No orders found for this user.</p>
+            <p id="noOrdersFound" style="display: none;">Bu istifadəçi xaricində heç bir sifariş tapılmadı.</p>
         </ul>
     </div>
 
@@ -141,6 +304,29 @@
             }, 5000); // Hide after 5 seconds
         }
 
+        async function fetchAllOrders() {
+            const orderList = document.getElementById('orderList');
+            const noOrdersFound = document.getElementById('noOrdersFound');
+            orderList.innerHTML = '';
+            noOrdersFound.style.display = 'none';
+            document.getElementById('userNameInput').value = ''; // Clear the input when showing all orders
+
+            try {
+                const response = await fetch('/api/taxis/allRequests'); // This endpoint needs to exist on your backend
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    showMessage('error', errorData.message || 'Bütün sifarişlər gətirilərkən xəta baş verdi.');
+                    return;
+                }
+
+                const orders = await response.json();
+                displayOrders(orders, 'Bütün sifarişlər uğurla yükləndi.');
+            } catch (error) {
+                showMessage('error', 'Bütün sifarişlər gətirilərkən şəbəkə xətası baş verdi.');
+                console.error('Error fetching all orders:', error);
+            }
+        }
+
         async function searchOrders() {
             const userName = document.getElementById('userNameInput').value.trim();
             const orderList = document.getElementById('orderList');
@@ -150,81 +336,99 @@
             noOrdersFound.style.display = 'none'; // Hide "No orders found" message
 
             if (!userName) {
-                showMessage('info', 'Please enter a user name to search.');
+                showMessage('info', 'Lütfən axtarış üçün bir istifadəçi adı daxil edin.');
                 return;
             }
 
             try {
-                // First, find the user(s) by name
+                // Step 1: Find the user(s) by name to get their IDs
                 const userResponse = await fetch(`/api/users/by-name?name=${encodeURIComponent(userName)}`);
                 if (!userResponse.ok) {
                     const errorData = await userResponse.json();
-                    showMessage('error', errorData.message || 'Error finding user(s).');
+                    showMessage('error', errorData.message || 'İstifadəçi(lər) tapılarkən xəta baş verdi.');
                     return;
                 }
                 const users = await userResponse.json();
 
                 if (users.length === 0) {
+                    noOrdersFound.textContent = 'Bu adla heç bir istifadəçi tapılmadı.';
                     noOrdersFound.style.display = 'block';
-                    showMessage('info', 'No user found with that name.');
+                    showMessage('info', 'Bu adla heç bir istifadəçi tapılmadı.');
                     return;
                 }
 
-                let allOrders = [];
-                for (const user of users) {
-                    // Then, fetch orders for each found user
-                    const orderResponse = await fetch(`/api/taxis/userRequests/${user._id}`);
-                    if (orderResponse.ok) {
-                        const userOrders = await orderResponse.json();
-                        if (userOrders.length > 0) {
-                             allOrders = allOrders.concat(userOrders.map(order => ({ ...order, userName: user.name })));
-                        }
-                    } else if (orderResponse.status === 404) {
-                        console.log(`No orders found for user ${user.name} (ID: ${user._id})`);
-                    } else {
-                        const errorData = await orderResponse.json();
-                        showMessage('error', errorData.message || `Error fetching orders for user ${user.name}.`);
-                    }
+                const userIdsToExclude = users.map(user => user._id);
+
+                // Step 2: Fetch all orders *excluding* those from the found user IDs
+                // IMPORTANT: You need a backend API endpoint that supports this.
+                // For example: GET /api/taxis/orders/exclude?userIds=id1,id2,id3
+                const excludeUrl = `/api/taxis/orders/exclude?userIds=${userIdsToExclude.join(',')}`;
+                const ordersResponse = await fetch(excludeUrl);
+
+                if (!ordersResponse.ok) {
+                    const errorData = await ordersResponse.json();
+                    showMessage('error', errorData.message || 'Sifarişlər gətirilərkən xəta baş verdi.');
+                    return;
                 }
 
-                if (allOrders.length > 0) {
-                    allOrders.forEach(order => {
-                        const listItem = document.createElement('li');
-                        listItem.className = 'order-item';
-                        // Add data-id attribute for easy removal
-                        listItem.setAttribute('data-id', order._id); 
-                        listItem.innerHTML = `
-                            <div class="order-info"><strong>User Name:</strong> <span>${order.userName || 'N/A'}</span></div>
-                            <div class="order-info"><strong>From:</strong> <span>${order.currentAddress ? order.currentAddress.text : 'N/A'}</span></div>
-                            <div class="order-info"><strong>To:</strong> <span>${order.destinationAddress ? order.destinationAddress.text : 'N/A'}</span></div>
-                            <div class="order-info"><strong>Price:</strong> <span>${order.price || 'N/A'} ₼</span></div>
-                            <div class="order-info"><strong>Status:</strong> <span>
-                                ${order.isTaken ? 'Taken' : 'Pending'} 
-                                ${order.isFinished ? ' - Finished' : ''} 
-                                ${order.isConfirmed ? ' - Confirmed' : ''}
-                            </span></div>
-                            <div class="order-info"><strong>Order ID:</strong> <span>${order._id}</span></div>
-                            <div class="order-info"><strong>Driver:</strong> <span>${order.driverDetails ? `${order.driverDetails.firstName} (${order.driverDetails.carPlate})` : 'N/A'}</span></div>
-                            <div class="order-info"><strong>Requested At:</strong> <span>${new Date(order.createdAt).toLocaleString()}</span></div>
-                            <button class="delete-btn" onclick="deleteOrder('${order._id}')">Delete</button>
-                        `;
-                        orderList.appendChild(listItem);
-                    });
-                    showMessage('success', `${allOrders.length} orders found for "${userName}".`);
-                } else {
-                    noOrdersFound.style.display = 'block';
-                    showMessage('info', 'No orders found for the specified user name.');
-                }
+                const orders = await ordersResponse.json();
+                displayOrders(orders, `"${userName}" istifadəçisi xaricində ${orders.length} sifariş tapıldı.`);
 
             } catch (error) {
-                showMessage('error', 'An error occurred while searching for orders.');
+                showMessage('error', 'Sifarişlər axtarılarkən xəta baş verdi.');
                 console.error('Error searching orders:', error);
             }
         }
 
+        function displayOrders(orders, successMessage) {
+            const orderList = document.getElementById('orderList');
+            const noOrdersFound = document.getElementById('noOrdersFound');
+
+            orderList.innerHTML = ''; // Clear previous results
+
+            if (orders.length > 0) {
+                orders.forEach(order => {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'order-item';
+                    listItem.setAttribute('data-id', order._id);
+
+                    // Determine user name for display (from order.userId if available, or 'N/A')
+                    const orderUserName = order.user && order.user.name ? order.user.name : 'N/A'; // Assuming order.user.name exists
+                    const currentAddress = order.currentAddress ? order.currentAddress.text : 'Təyin olunmayıb';
+                    const destinationAddress = order.destinationAddress ? order.destinationAddress.text : 'Təyin olunmayıb';
+                    const price = order.price != null ? `${parseFloat(order.price).toFixed(2)} ₼` : 'Təyin olunmayıb';
+                    const driverInfo = order.driverDetails ? `${order.driverDetails.firstName} (${order.driverDetails.carPlate})` : 'Təyin olunmayıb';
+
+                    const status = [];
+                    if (order.isTaken) status.push('Qəbul edildi');
+                    if (order.isFinished) status.push('Bitdi');
+                    if (order.isConfirmed) status.push('Təsdiqləndi');
+                    const statusText = status.length > 0 ? status.join(' - ') : 'Gözləmədə';
+
+                    listItem.innerHTML = `
+                        <div class="order-info"><strong>İstifadəçi Adı:</strong> <span>${orderUserName}</span></div>
+                        <div class="order-info"><strong>Hardan:</strong> <span>${currentAddress}</span></div>
+                        <div class="order-info"><strong>Hara:</strong> <span>${destinationAddress}</span></div>
+                        <div class="order-info"><strong>Qiymət:</strong> <span>${price}</span></div>
+                        <div class="order-info"><strong>Status:</strong> <span>${statusText}</span></div>
+                        <div class="order-info"><strong>Sifariş ID:</strong> <span>${order._id}</span></div>
+                        <div class="order-info"><strong>Sürücü:</strong> <span>${driverInfo}</span></div>
+                        <div class="order-info"><strong>Tarix:</strong> <span>${new Date(order.createdAt).toLocaleString()}</span></div>
+                        <button class="delete-btn" onclick="deleteOrder('${order._id}')"><i class="fas fa-trash-alt"></i> Sil</button>
+                    `;
+                    orderList.appendChild(listItem);
+                });
+                showMessage('success', successMessage);
+                noOrdersFound.style.display = 'none'; // Hide if orders are found
+            } else {
+                noOrdersFound.style.display = 'block';
+                showMessage('info', 'Heç bir sifariş tapılmadı.');
+            }
+        }
+
         async function deleteOrder(orderId) {
-            if (!confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
-                return; // User cancelled the deletion
+            if (!confirm('Bu sifarişi silmək istədiyinizə əminsiniz? Bu əməliyyat geri qaytarıla bilməz.')) {
+                return;
             }
 
             try {
@@ -233,25 +437,34 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ requestId: orderId })
+                    body: JSON.stringify({
+                        requestId: orderId
+                    })
                 });
 
                 if (response.ok) {
-                    showMessage('success', 'Order deleted successfully!');
-                    // Remove the deleted order from the DOM
+                    showMessage('success', 'Sifariş uğurla silindi!');
                     const listItem = document.querySelector(`.order-item[data-id="${orderId}"]`);
                     if (listItem) {
                         listItem.remove();
                     }
+                    // Re-evaluate if "no orders found" message should be shown after deletion
+                    if (document.getElementById('orderList').children.length === 0) {
+                        document.getElementById('noOrdersFound').style.display = 'block';
+                    }
                 } else {
                     const errorData = await response.json();
-                    showMessage('error', errorData.message || 'Failed to delete order.');
+                    showMessage('error', errorData.message || 'Sifariş silinərkən xəta baş verdi.');
                 }
             } catch (error) {
-                showMessage('error', 'An error occurred while trying to delete the order.');
+                showMessage('error', 'Sifariş silinərkən şəbəkə xətası baş verdi.');
                 console.error('Error deleting order:', error);
             }
         }
+
+        // Fetch all orders on page load
+        document.addEventListener('DOMContentLoaded', fetchAllOrders);
     </script>
 </body>
+
 </html>
