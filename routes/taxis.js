@@ -792,64 +792,107 @@ router.put('/order/:orderId/isTaken', async (req, res) => {
 });
 
 router.put('/order/:orderId/setAtAddress', async (req, res) => {
-  const { atAddress } = req.body;
+  let { atAddress } = req.body;
   const { orderId } = req.params;
 
-  try {
-    const updatedOrder = await TaxiRequest.findByIdAndUpdate(
-      orderId,
-      { atAddress: atAddress },
-      { new: true }
-    );
+  // String "true"/"false" gelirse normalize et
+  if (typeof atAddress === 'string') {
+    atAddress = atAddress.toLowerCase() === 'true';
+  }
 
-    if (!updatedOrder) {
+  try {
+    // Önce mevcut siparişi al
+    const existingOrder = await TaxiRequest.findById(orderId);
+    if (!existingOrder) {
       return res.status(404).json({ message: 'Sipariş bulunamadı.' });
     }
 
-    if (atAddress === true) {
-      const user = await User.findById(updatedOrder.userId);
+    // Zaten true ise (ve tekrar tekrar bildirim istemiyorsan) erken çıkabilirsin:
+    // if (existingOrder.atAddress && atAddress) {
+    //   return res.json({ message: 'Zaten ünvanda işaretlenmiş.', order: existingOrder });
+    // }
 
-      if (user && user.fcmToken) {
+    // Güncelle
+    existingOrder.atAddress = atAddress;
+    const updatedOrder = await existingOrder.save();
+
+    if (atAddress) {
+      const user = await User.findById(updatedOrder.userId).lean();
+      if (user?.fcmToken) {
+        // Driver details fallback:
+        const dd = updatedOrder.driverDetails || {};
+        const driverName = dd.firstName || 'Sürücü';
+        const carPlate = dd.carPlate || 'N/A';
+        const carModel = dd.carModel || '';
+        const carDisplay = carPlate !== 'N/A' ? carPlate : 'ünvanda';
+
         const message = {
+          token: user.fcmToken,
           notification: {
-            title: `AloArda - ${updatedOrder.driverDetails ? updatedOrder.driverDetails.carPlate : 'ünvanda'}`,
-            body: `Dəyərli sərnişinimiz, sürücünüz "${updatedOrder.driverDetails ? updatedOrder.driverDetails.firstName : ''}" ünvanda sizi gözləyir.`,
-          },
-          android: {
-            notification: {
-              channel_id: 'default_channel_id',
-              sound: 'tak_tak_tak',
-              priority: 'high',
-              visibility: 'public',
-            },
+            title: `AloArda - ${carDisplay}`,
+            body: `Dəyərli sərnişinimiz, sürücünüz "${driverName}" ünvanda sizi gözləyir.`
           },
           data: {
             requestId: updatedOrder._id.toString(),
             notification_type: 'DRIVER_AT_ADDRESS',
-            driverName: updatedOrder.driverDetails ? updatedOrder.driverDetails.firstName : 'Sürücü',
-            carModel: updatedOrder.driverDetails ? updatedOrder.driverDetails.carModel : '',
-            carPlate: updatedOrder.driverDetails ? updatedOrder.driverDetails.carPlate : '',
+            driverName,
+            carModel,
+            carPlate,
             atAddress: 'true'
           },
-          token: user.fcmToken,
+          android: {
+            priority: 'high',
+            notification: {
+              channel_id: 'default_channel_id',
+              sound: 'default',          // önce default test et
+              visibility: 'public'
+              // tag: updatedOrder._id.toString()  // Aynı bildirimi güncellemek için kullanabilirsin
+            }
+          },
+          apns: {
+            payload: {
+              aps: {
+                sound: 'default',
+                contentAvailable: 1
+              }
+            }
+          }
+          // webpush vb. gerekiyorsa eklenebilir
         };
 
+        console.log('[AT_ADDRESS] FCM gönderiliyor:', {
+          to: user._id.toString(),
+            order: updatedOrder._id.toString()
+        });
+
         try {
-          await customerApp.messaging().send(message); // DEĞİŞİKLİK BURADA
-          console.log(`Müşteriye (${user.name}) 'Sürücü Ünvandadır' bildirimi gönderildi.`);
-        } catch (notificationError) {
-          console.error('Müşteriye bildirim gönderilirken hata oluştu:', notificationError);
+          const messageId = await customerApp.messaging().send(message);
+          console.log(`[AT_ADDRESS] Bildirim gönderildi. messageId=${messageId}`);
+        } catch (err) {
+          console.error('[AT_ADDRESS] FCM gönderim hatası:', err?.errorInfo || err);
+
+          // Geçersiz token -> temizle
+          if (err?.errorInfo?.code === 'messaging/registration-token-not-registered') {
+            try {
+              await User.updateOne({ _id: user._id }, { $unset: { fcmToken: "" } });
+              console.log('[AT_ADDRESS] Geçersiz token silindi.');
+            } catch (cleanErr) {
+              console.error('Token silinirken hata:', cleanErr);
+            }
+          }
         }
       } else {
-        console.log('Siparişin kullanıcısı bulunamadı veya FCM tokenı yok. Müşteriye bildirim gönderilemedi.');
+        console.log('[AT_ADDRESS] Kullanıcı veya fcmToken yok, bildirim atlanıyor.');
       }
     }
+
     res.json(updatedOrder);
   } catch (error) {
-    console.error('Güncellenirken hata oluştu:', error);
-    res.status(500).json({ message: 'Güncellenirken hata oluştu.' });
+    console.error('setAtAddress güncellenirken hata:', error);
+    res.status(500).json({ message: 'Güncellenirken hata oluştu.', error: error.message });
   }
 });
+
 
 router.post('/customerAccepted', async (req, res) => {
   try {
