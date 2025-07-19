@@ -16,7 +16,7 @@ function getTotalFiveStar(driver) {
 
 function hasValidCoords(d) {
   const loc = d.location || {};
-  return Number.isFinite(loc.lat) && Number.isFinite(loc.lan);
+  return Number.isFinite(loc.lat) && Number.isFinite(loc.lon);
 }
 
 function deg2rad(deg) { return deg * (Math.PI / 180); }
@@ -76,7 +76,7 @@ async function selectBestDriver({ price, orderLat, orderLon, candidateDrivers = 
       atWork: true,
       onOrder: false,
       'location.lat': { $ne: null },
-      'location.lan': { $ne: null }
+      'location.lon': { $ne: null }
     });
   }
 
@@ -85,7 +85,7 @@ async function selectBestDriver({ price, orderLat, orderLon, candidateDrivers = 
 
   if (price <= 2) {
     return drivers.reduce((best, d) => {
-      const dist = getDistanceKm(orderLat, orderLon, d.location.lat, d.location.lan);
+      const dist = getDistanceKm(orderLat, orderLon, d.location.lat, d.location.lon);
       return !best || dist < best.dist ? { driver: d, dist } : best;
     }, null).driver;
   }
@@ -94,7 +94,7 @@ async function selectBestDriver({ price, orderLat, orderLon, candidateDrivers = 
   let pool = maxFive === 0 ? drivers : drivers.filter(d => getTotalFiveStar(d) === maxFive);
 
   return pool.reduce((best, d) => {
-    const dist = getDistanceKm(orderLat, orderLon, d.location.lat, d.location.lan);
+    const dist = getDistanceKm(orderLat, orderLon, d.location.lat, d.location.lon);
     return !best || dist < best.dist ? { driver: d, dist } : best;
   }, null).driver;
 }
@@ -106,7 +106,7 @@ async function sendOrderFCMToDriver(driver, order) {
     order.currentAddress.latitude,
     order.currentAddress.longitude,
     driver.location.lat,
-    driver.location.lan
+    driver.location.lon
   );
 
   try {
@@ -156,7 +156,7 @@ async function autoReassignOrder(order) {
     atWork: true,
     onOrder: false,
     'location.lat': { $ne: null },
-    'location.lan': { $ne: null }
+    'location.lon': { $ne: null }
   });
 
   drivers = drivers.filter(hasValidCoords);
@@ -339,6 +339,17 @@ setInterval(async () => {
   }
 }, 10_000);
 
+router.get('/requests', async (req, res) => {
+  try {
+    // Sadece isTaken ve isFinished olmayan siparişleri çekin
+    const requests = await TaxiRequest.find({ isTaken: false, isFinished: false }).sort({ createdAt: -1 });
+    res.status(200).json(requests);
+  } catch (error) {
+    console.error('Taksi istekleri çekilirken hata:', error);
+    res.status(500).json({ message: 'Hata oluştu' });
+  }
+});
+
 router.delete('/request', async (req, res) => {
   try {
     const { requestId } = req.body; // İstek gövdesinden sipariş ID'sini alırız
@@ -354,17 +365,6 @@ router.delete('/request', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Taksi isteği silinirken bir hata oluştu.' });
-  }
-});
-
-router.get('/requests', async (req, res) => {
-  try {
-    // Sadece isTaken ve isFinished olmayan siparişleri çekin
-    const requests = await TaxiRequest.find({ isTaken: false, isFinished: false }).sort({ createdAt: -1 });
-    res.status(200).json(requests);
-  } catch (error) {
-    console.error('Taksi istekleri çekilirken hata:', error);
-    res.status(500).json({ message: 'Hata oluştu' });
   }
 });
 
@@ -1017,7 +1017,7 @@ router.post('/reassign-order', async (req, res) => {
       onOrder: false,
       atWork: true,
       'location.lat': { $exists: true },
-      'location.lan': { $exists: true }
+      'location.lon': { $exists: true }
     });
 
     if (availableDrivers.length === 0) {
@@ -1040,8 +1040,8 @@ router.post('/reassign-order', async (req, res) => {
     let nearestDistance = Infinity;
 
     for (const driver of availableDrivers) {
-      if (!driver.location || typeof driver.location.lat !== 'number' || typeof driver.location.lan !== 'number') continue;
-      const dist = getDistanceSq(driver.location.lat, driver.location.lan, orderLat, orderLon);
+      if (!driver.location || typeof driver.location.lat !== 'number' || typeof driver.location.lon !== 'number') continue;
+      const dist = getDistanceSq(driver.location.lat, driver.location.lon, orderLat, orderLon);
       if (dist < nearestDistance) {
         nearestDistance = dist;
         nearestDriver = driver;

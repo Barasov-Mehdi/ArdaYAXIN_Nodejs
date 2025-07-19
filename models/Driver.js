@@ -27,7 +27,7 @@ const DriversSchema = new mongoose.Schema({
     },
     location: {
         lat: { type: Number, default: null },
-        lan: { type: Number, default: null }  // Genellikle 'lng' kullanılır, sen 'lan' demişsin
+        lon: { type: Number, default: null }  // Genellikle 'lng' kullanılır, sen 'lan' demişsin
     },
     email: {
         type: String,
