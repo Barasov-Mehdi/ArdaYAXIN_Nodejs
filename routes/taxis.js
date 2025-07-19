@@ -321,26 +321,6 @@ router.post('/orders/:orderId/reject', async (req, res) => {
   }
 });
 
-
-// setInterval(async () => {
-//   try {
-//     const threshold = new Date(Date.now() - 10_000);
-//     const staleOrders = await TaxiRequest.find({
-//       isTaken: false,
-//       isFinished: { $ne: true },
-//       status: 'pending',
-//       lastAssignedAt: { $lte: threshold }
-//     });
-
-//     for (const order of staleOrders) {
-//       await autoReassignOrder(order);
-//     }
-//   } catch (err) {
-//     console.error('Auto-reassign döngü hatası:', err);
-//   }
-// }, 10_000);
-
-
 // Auto reassign CRON (her 10 saniyede bir)
 cron.schedule('*/10 * * * * *', async () => {
   // Eğer yalnızca tek instance çalışsın istiyorsan:

@@ -182,28 +182,29 @@ router.put('/:id', async (req, res) => {
 router.put('/:driverId/location', async (req, res) => {
     const { driverId } = req.params;
     const { lat, lon } = req.body;
-
+  
     if (
-        typeof lat !== 'number' || typeof lon !== 'number' ||
-        lat < -90 || lat > 90 ||
-        lon < -180 || lon > 180
-      ) {
-        return res.status(400).json({ msg: 'Geçersiz koordinatlar.' });
-      }
-
-    try {
-        const driver = await Drivers.findById(driverId);
-        if (!driver) return res.status(404).json({ msg: 'Sürücü bulunamadı.' });
-
-        driver.location = { lat, lon };
-        await driver.save();
-
-        res.json({ msg: 'Konum başarıyla güncellendi.', location: driver.location });
-    } catch (error) {
-        console.error('Konum güncellenirken hata:', error);
-        res.status(500).json({ msg: 'Sunucu hatası', error: error.message });
+      typeof lat !== 'number' || typeof lon !== 'number' ||
+      lat < -90 || lat > 90 ||
+      lon < -180 || lon > 180
+    ) {
+      return res.status(400).json({ msg: 'Geçersiz koordinatlar.' });
     }
-});
+  
+    try {
+      const driver = await Drivers.findById(driverId);
+      if (!driver) return res.status(404).json({ msg: 'Sürücü bulunamadı.' });
+  
+      driver.location = { lat, lon };
+      await driver.save();
+  
+      res.json({ msg: 'Konum başarıyla güncellendi.', location: driver.location });
+    } catch (error) {
+      console.error('Konum güncellenirken hata:', error);
+      res.status(500).json({ msg: 'Sunucu hatası', error: error.message });
+    }
+  });
+  
 
 router.get('/:driverId/location', async (req, res) => {
     try {
