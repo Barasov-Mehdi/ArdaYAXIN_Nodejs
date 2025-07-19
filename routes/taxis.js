@@ -364,6 +364,21 @@ router.get('/requests', async (req, res) => {
   }
 });
 
+router.get('/requests/waiting-driver/count', async (req, res) => {
+  try {
+    const count = await TaxiRequest.countDocuments({
+      status: 'waiting-driver',
+      isTaken: false,
+      isFinished: false
+    });
+    res.json({ count });
+  } catch (e) {
+    console.error('[GET /requests/waiting-driver/count] Hata:', e);
+    res.status(500).json({ message: 'Count hata', error: e.message });
+  }
+});
+
+
 router.delete('/request', async (req, res) => {
   try {
     const { requestId } = req.body; // İstek gövdesinden sipariş ID'sini alırız

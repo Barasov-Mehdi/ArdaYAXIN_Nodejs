@@ -183,6 +183,7 @@ router.put('/:driverId/location', async (req, res) => {
     const { driverId } = req.params;
     const { lat, lon } = req.body;
   
+    console.log(`[PUT] /drivers/${driverId}/location - body:`, req.body);
     if (
       typeof lat !== 'number' || typeof lon !== 'number' ||
       lat < -90 || lat > 90 ||
