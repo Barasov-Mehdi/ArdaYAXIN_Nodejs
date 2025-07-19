@@ -7,6 +7,7 @@ const { driverApp, customerApp } = require('../server');
 const admin = require('firebase-admin');
 const CanceledOrder = require('../models/CanceledOrder');
 const ReassignedOrder = require('../models/ReassignedOrder');
+const cron = require('node-cron');
 
 
 function getTotalFiveStar(driver) {
@@ -61,7 +62,7 @@ function getDistanceKm(lat1, lon1, lat2, lon2) {
   const B = (uSq / 1024) * (256 + uSq * (-128 + uSq * (74 - 47 * uSq)));
   const deltaSigma = B * sinSigma * (cos2SigmaM + (B / 4) *
     (cosSigma * (-1 + 2 * cos2SigmaM ** 2) -
-     (B / 6) * cos2SigmaM * (-3 + 4 * sinSigma ** 2) * (-3 + 4 * cos2SigmaM ** 2)));
+      (B / 6) * cos2SigmaM * (-3 + 4 * sinSigma ** 2) * (-3 + 4 * cos2SigmaM ** 2)));
 
   const s = b * A * (sigma - deltaSigma); // mesafe metre
   return s / 1000; // kilometre
@@ -321,23 +322,56 @@ router.post('/orders/:orderId/reject', async (req, res) => {
 });
 
 
-setInterval(async () => {
+// setInterval(async () => {
+//   try {
+//     const threshold = new Date(Date.now() - 10_000);
+//     const staleOrders = await TaxiRequest.find({
+//       isTaken: false,
+//       isFinished: { $ne: true },
+//       status: 'pending',
+//       lastAssignedAt: { $lte: threshold }
+//     });
+
+//     for (const order of staleOrders) {
+//       await autoReassignOrder(order);
+//     }
+//   } catch (err) {
+//     console.error('Auto-reassign döngü hatası:', err);
+//   }
+// }, 10_000);
+
+
+// Auto reassign CRON (her 10 saniyede bir)
+cron.schedule('*/10 * * * * *', async () => {
+  // Eğer yalnızca tek instance çalışsın istiyorsan:
+  if (process.env.AUTO_ASSIGN_ENABLED !== 'true') return;
+
+  const startedAt = new Date();
+  console.log('[CRON] Auto-reassign taraması başladı:', startedAt.toISOString());
+
   try {
-    const threshold = new Date(Date.now() - 10_000);
+    const threshold = new Date(Date.now() - 10_000); // 10 sn önce
     const staleOrders = await TaxiRequest.find({
       isTaken: false,
       isFinished: { $ne: true },
       status: 'pending',
       lastAssignedAt: { $lte: threshold }
-    });
+    }).limit(50); // Çok sayıda birikirse sisteme yük bindirmesin
+
+    console.log(`[CRON] İncelenen stale order sayısı: ${staleOrders.length}`);
 
     for (const order of staleOrders) {
-      await autoReassignOrder(order);
+      try {
+        await autoReassignOrder(order);
+      } catch (innerErr) {
+        console.error('[CRON] Tek sipariş yeniden atama hatası:', order._id, innerErr);
+      }
     }
   } catch (err) {
-    console.error('Auto-reassign döngü hatası:', err);
+    console.error('[CRON] Auto-reassign genel hata:', err);
   }
-}, 10_000);
+});
+
 
 router.get('/requests', async (req, res) => {
   try {
