@@ -181,21 +181,21 @@ router.put('/:id', async (req, res) => {
 
 router.put('/:driverId/location', async (req, res) => {
     const { driverId } = req.params;
-    const { lat, lan } = req.body;
+    const { lat, lon } = req.body;
 
     if (
-        typeof lat !== 'number' || typeof lan !== 'number' ||
+        typeof lat !== 'number' || typeof lon !== 'number' ||
         lat < -90 || lat > 90 ||
-        lan < -180 || lan > 180
-    ) {
+        lon < -180 || lon > 180
+      ) {
         return res.status(400).json({ msg: 'Geçersiz koordinatlar.' });
-    }
+      }
 
     try {
         const driver = await Drivers.findById(driverId);
         if (!driver) return res.status(404).json({ msg: 'Sürücü bulunamadı.' });
 
-        driver.location = { lat, lan };
+        driver.location = { lat, lon };
         await driver.save();
 
         res.json({ msg: 'Konum başarıyla güncellendi.', location: driver.location });
