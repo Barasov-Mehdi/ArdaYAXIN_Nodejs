@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sürücü Sifariş Durumları</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --background-light: #f8f9fa;
+            --text-dark: #343a40;
+            --card-bg: #ffffff;
+            --border-light: #e0e0e0;
+            --shadow-light: rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--background-light);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            background: var(--card-bg);
+            padding: 25px 35px;
+            border-radius: 12px;
+            box-shadow: 0 6px 15px var(--shadow-light);
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 35px;
+            font-size: 2.2em;
+            font-weight: 600;
+        }
+
+        .driver-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .driver-item {
+            display: flex;
+            flex-direction: column; /* Mobil üçün sütun düzümü */
+            align-items: flex-start; /* Mobil üçün sola hizala */
+            padding: 18px 0;
+            border-bottom: 1px solid var(--border-light);
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .driver-item:last-child {
+            border-bottom: none;
+        }
+
+        .driver-item:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+            border-radius: 4px; /* Hover zamanı yüngül künc yuvarlaqlığı */
+        }
+
+        .driver-info {
+            flex-grow: 1;
+            margin-bottom: 10px; /* Mobil üçün mətn ilə düymə arasına boşluq */
+        }
+
+        .driver-name {
+            font-weight: 600;
+            font-size: 1.2em;
+            color: var(--text-dark);
+        }
+
+        .driver-status-text {
+            font-size: 0.95em;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+
+        .driver-actions {
+            display: flex;
+            align-items: center;
+            width: 100%; /* Mobil üçün bütün eni tutsun */
+            justify-content: flex-end; /* Düymələri sağa hizala */
+        }
+
+        .status-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px; /* Daha çox yuvarlaqlıq */
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            color: white;
+            min-width: 150px; /* Düymənin minimum eni */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .status-button:active {
+            transform: translateY(1px); /* Klikləyəndə yüngül basılma effekti */
+        }
+
+        /* Status rəngləri */
+        .status-false { background-color: var(--danger-color); } /* Qırmızı - Siparişdədirsə */
+        .status-true { background-color: var(--success-color); } /* Yaşıl - Boşdadırsa */
+
+        .status-false:hover { background-color: #c82333; }
+        .status-true:hover { background-color: #218838; }
+
+        .message {
+            margin-top: 25px;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1em;
+            transition: all 0.3s ease-in-out;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+        /* Responsive Düzəlişlər */
+        @media (min-width: 768px) {
+            .driver-item {
+                flex-direction: row; /* Tablet və desktop üçün sətr düzümü */
+                align-items: center;
+            }
+            .driver-info {
+                margin-bottom: 0; /* Boşluğu sil */
+            }
+            .driver-actions {
+                width: auto; /* Eni avtomatik ayarla */
+                margin-left: 20px; /* Düymələri soldan boşluq ver */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                margin: 20px auto;
+                padding: 20px;
+            }
+            h1 {
+                font-size: 1.8em;
+                margin-bottom: 25px;
+            }
+            .status-button {
+                width: 100%; /* Kiçik ekranlarda düymənin bütün eni tutması */
+                margin-top: 10px; /* Düymələr arasında boşluq */
+                min-width: unset;
+            }
+            .driver-actions {
+                flex-direction: column; /* Düymələri alt-alta sırala */
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sürücü Sifariş Vəziyyəti</h1>
+
+        <div id="message" class="message" style="display: none;"></div>
+
+        <ul class="driver-list">
+            <% drivers.forEach(driver => { %>
+                <li class="driver-item" id="driver-<%= driver._id %>">
+                    <div class="driver-info">
+                        <span class="driver-name"><%= driver.firstName %> <%= driver.lastName %></span>
+                        <div class="driver-status-text" id="status-text-<%= driver._id %>">Status: <%= driver.onOrder ? 'Sifariş Üzərindədir' : 'Boşdadır' %></div>
+                    </div>
+                    <div class="driver-actions">
+                        <button
+                            class="status-button <%= driver.onOrder ? 'status-false' : 'status-true' %>"
+                            onclick="toggleOnOrderStatus('<%= driver._id %>', '<%= driver.onOrder %>')"
+                        >
+                            <%= driver.onOrder ? 'Boş Olaraq İşarələ' : 'Sifarişdə Olaraq İşarələ' %>
+                        </button>
+                    </div>
+                </li>
+            <% }); %>
+        </ul>
+    </div>
+    <script>
+        async function toggleOnOrderStatus(driverId, currentStatus) {
+            const newStatus = !currentStatus; // Mövcud durumun əksini al
+            const messageDiv = document.getElementById('message');
+            messageDiv.style.display = 'none'; // Əvvəlki mesajı gizlə
+
+            try {
+                const response = await fetch(`/api/drivers/${driverId}/update-on-order`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ onOrder: newStatus })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    const driverItem = document.getElementById(`driver-${driverId}`);
+                    const statusText = document.getElementById(`status-text-${driverId}`);
+                    const button = driverItem.querySelector('.status-button');
+
+                    statusText.textContent = `Status: ${newStatus ? 'Sifariş Üzərindədir' : 'Boşdadır'}`;
+
+                    button.textContent = newStatus ? 'Boş Olaraq İşarələ' : 'Sifarişdə Olaraq İşarələ';
+                    button.classList.remove(currentStatus ? 'status-false' : 'status-true');
+                    button.classList.add(newStatus ? 'status-false' : 'status-true');
+                    button.onclick = () => toggleOnOrderStatus(driverId, newStatus);
+
+                    showMessage('success', data.msg);
+                } else {
+                    showMessage('error', data.msg || 'Durum yenilənərkən xəta baş verdi.');
+                }
+            } catch (error) {
+                console.error('Sorğu xətası:', error);
+                showMessage('error', 'Serverə qoşularkən xəta baş verdi.');
+            }
+        }
+
+        function showMessage(type, text) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

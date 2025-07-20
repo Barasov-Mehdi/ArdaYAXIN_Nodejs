@@ -10,7 +10,7 @@ const TaxiRequest = require('../models/taxiRequest');
 
 router.put('/:driverId/update-stats', async (req, res) => {
     const { driverId } = req.params;
-    const { limit, dailyOrderCount, dailyEarnings } = req.body; 
+    const { limit, dailyOrderCount, dailyEarnings } = req.body;
 
     try {
         const driver = await Drivers.findById(driverId);
@@ -65,19 +65,19 @@ router.get('/get-drivers', async (req, res) => {
 });
 
 router.get('/available-orders/:driverId', async (req, res) => {
-  const { driverId } = req.params;
+    const { driverId } = req.params;
 
-  try {
-    const orders = await TaxiRequest.find({
-      isTaken: false,
-      visibility: driverId  // sadece bu sürücünün görebileceği siparişler
-    });
+    try {
+        const orders = await TaxiRequest.find({
+            isTaken: false,
+            visibility: driverId  // sadece bu sürücünün görebileceği siparişler
+        });
 
-    res.json(orders);
-  } catch (error) {
-    console.error('Error fetching visible orders:', error);
-    res.status(500).json({ message: 'Siparişler alınırken bir hata oluştu.' });
-  }
+        res.json(orders);
+    } catch (error) {
+        console.error('Error fetching visible orders:', error);
+        res.status(500).json({ message: 'Siparişler alınırken bir hata oluştu.' });
+    }
 });
 
 router.get('/:id/current-location', async (req, res) => {
@@ -86,7 +86,7 @@ router.get('/:id/current-location', async (req, res) => {
         if (!request || !request.coordinates) {
             return res.status(404).json({ message: 'Sürücü koordinatları bulunamadı.' });
         }
-        res.json(request.coordinates); 
+        res.json(request.coordinates);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Konum alınırken bir hata oluştu.' });
@@ -132,8 +132,8 @@ router.post('/register', async (req, res) => {
             carColor,
             email,
             password,
-            atWork: false,  
-            onOrder: false   
+            atWork: false,
+            onOrder: false
         });
 
         const salt = await bcrypt.genSalt(10);
@@ -165,10 +165,10 @@ router.put('/:id', async (req, res) => {
             driver.onOrder = onOrder;
         }
         if (lastOrderId) {
-            driver.lastOrderId = lastOrderId; 
+            driver.lastOrderId = lastOrderId;
         }
         if (lastOrderIds && lastOrderIds.length > 0) {
-            driver.lastOrderIds.push(...lastOrderIds); 
+            driver.lastOrderIds.push(...lastOrderIds);
         }
 
         await driver.save();
@@ -182,30 +182,71 @@ router.put('/:id', async (req, res) => {
 router.put('/:driverId/location', async (req, res) => {
     const { driverId } = req.params;
     const { lat, lon } = req.body;
-  
+
     console.log(`[PUT] /drivers/${driverId}/location - body:`, req.body);
     if (
-      typeof lat !== 'number' || typeof lon !== 'number' ||
-      lat < -90 || lat > 90 ||
-      lon < -180 || lon > 180
+        typeof lat !== 'number' || typeof lon !== 'number' ||
+        lat < -90 || lat > 90 ||
+        lon < -180 || lon > 180
     ) {
-      return res.status(400).json({ msg: 'Geçersiz koordinatlar.' });
+        return res.status(400).json({ msg: 'Geçersiz koordinatlar.' });
     }
-  
+
     try {
-      const driver = await Drivers.findById(driverId);
-      if (!driver) return res.status(404).json({ msg: 'Sürücü bulunamadı.' });
-  
-      driver.location = { lat, lon };
-      await driver.save();
-  
-      res.json({ msg: 'Konum başarıyla güncellendi.', location: driver.location });
+        const driver = await Drivers.findById(driverId);
+        if (!driver) return res.status(404).json({ msg: 'Sürücü bulunamadı.' });
+
+        driver.location = { lat, lon };
+        await driver.save();
+
+        res.json({ msg: 'Konum başarıyla güncellendi.', location: driver.location });
     } catch (error) {
-      console.error('Konum güncellenirken hata:', error);
-      res.status(500).json({ msg: 'Sunucu hatası', error: error.message });
+        console.error('Konum güncellenirken hata:', error);
+        res.status(500).json({ msg: 'Sunucu hatası', error: error.message });
     }
-  });
-  
+});
+
+
+
+router.get('/on-order-status', async (req, res) => {
+    try {
+        const drivers = await Drivers.find({}, 'firstName lastName onOrder');
+        res.render('driverOnOrderStatus', { drivers });
+    } catch (error) {
+        console.error('Sürücüleri getirirken hata oluştu:', error);
+        res.status(500).json({ msg: 'Sunucu hatası', error: error.message });
+    }
+});
+
+// Bir sürücünün onOrder durumunu güncelleyen PUT rotası
+router.put('/:driverId/update-on-order', async (req, res) => {
+    const { driverId } = req.params;
+    const { onOrder } = req.body;
+
+    // 'onOrder' değerinin boolean olduğundan emin olun
+    if (typeof onOrder !== 'boolean') {
+        return res.status(400).json({ msg: 'Geçersiz onOrder değeri. true veya false olmalı.' });
+    }
+
+    try {
+        const driver = await Drivers.findById(driverId);
+        if (!driver) {
+            return res.status(404).json({ msg: 'Sürücü bulunamadı.' });
+        }
+
+        driver.onOrder = onOrder;
+        await driver.save();
+
+        res.json({ msg: 'Sürücünün onOrder durumu başarıyla güncellendi.', driver: { _id: driver._id, firstName: driver.firstName, lastName: driver.lastName, onOrder: driver.onOrder } });
+    } catch (error) {
+        console.error('Sürücünün onOrder durumunu güncellerken hata oluştu:', error);
+        res.status(500).json({ msg: 'Sunucu hatası', error: error.message });
+    }
+});
+
+
+
+
 
 router.get('/:driverId/location', async (req, res) => {
     try {
@@ -306,7 +347,7 @@ router.put('/:id/updateOrderCount', async (req, res) => {
         const driver = await Drivers.findById(req.params.id);
         if (!driver) return res.status(404).json({ msg: 'Driver not found' });
 
-        driver.dailyOrderCount += 1; 
+        driver.dailyOrderCount += 1;
         await driver.save();
         res.json({ msg: 'Sürücü sipariş sayısı güncellendi', dailyOrderCount: driver.dailyOrderCount });
     } catch (error) {
@@ -321,7 +362,7 @@ router.put('/:id/updateLimit', async (req, res) => {
     try {
         limit = parseFloat(limit);
 
-        if (isNaN(limit)) { 
+        if (isNaN(limit)) {
             return res.status(400).json({ msg: 'Geçersiz limit değeri. Lütfen bir sayı girin.' });
         }
 

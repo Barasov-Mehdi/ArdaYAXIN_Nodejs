@@ -200,6 +200,10 @@ app.get('/orders', async (req, res) => {
     }
 });
 
+app.get('/drivers-on-order', (req, res) => {
+    res.redirect('/api/drivers/on-order-status'); // Redirect to the actual route
+});
+
 
 app.use('/api/users', require('./routes/users'));
 app.use('/api/taxis', require('./routes/taxis')); // Burası güncellenecek route'ları içeriyor
