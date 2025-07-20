@@ -68,8 +68,6 @@ function getDistanceKm(lat1, lon1, lat2, lon2) {
   return s / 1000; // kilometre
 }
 
-
-// Sürücü Seçme
 async function selectBestDriver({ price, orderLat, orderLon, candidateDrivers = null }) {
   let drivers = candidateDrivers;
   if (!drivers) {
@@ -100,7 +98,6 @@ async function selectBestDriver({ price, orderLat, orderLon, candidateDrivers = 
   }, null).driver;
 }
 
-// Bildirim
 async function sendOrderFCMToDriver(driver, order) {
   if (!driver?.fcmToken) return;
   const distanceKm = getDistanceKm(
@@ -131,7 +128,6 @@ async function sendOrderFCMToDriver(driver, order) {
   }
 }
 
-// Otomatik Yeniden Atama
 async function autoReassignOrder(order) {
   if (order.isTaken || order.isFinished || order.status !== 'pending') return;
 
@@ -186,8 +182,6 @@ async function autoReassignOrder(order) {
   await sendOrderFCMToDriver(nextDriver, order);
 }
 
-
-// Sipariş oluştur
 router.post('/request', async (req, res) => {
   try {
     const {
@@ -291,8 +285,6 @@ router.post('/request', async (req, res) => {
   }
 });
 
-
-// Sipariş reddet
 router.post('/orders/:orderId/reject', async (req, res) => {
   try {
     const { driverId } = req.body;
@@ -321,8 +313,7 @@ router.post('/orders/:orderId/reject', async (req, res) => {
   }
 });
 
-// Auto reassign CRON (her 10 saniyede bir)
-cron.schedule('*/10 * * * * *', async () => {
+cron.schedule('*/15 * * * * *', async () => {
   // Eğer yalnızca tek instance çalışsın istiyorsan:
   if (process.env.AUTO_ASSIGN_ENABLED !== 'true') return;
 
@@ -355,7 +346,6 @@ cron.schedule('*/10 * * * * *', async () => {
 
 router.get('/requests', async (req, res) => {
   try {
-    // Sadece isTaken ve isFinished olmayan siparişleri çekin
     const requests = await TaxiRequest.find({ isTaken: false, isFinished: false }).sort({ createdAt: -1 });
     res.status(200).json(requests);
   } catch (error) {
@@ -377,7 +367,6 @@ router.get('/requests/waiting-driver/count', async (req, res) => {
     res.status(500).json({ message: 'Count hata', error: e.message });
   }
 });
-
 
 router.delete('/request', async (req, res) => {
   try {
@@ -1104,7 +1093,4 @@ router.post('/reassign-order', async (req, res) => {
     return res.status(500).json({ message: 'Sunucu hatası oluştu.', error: error.message });
   }
 });
-
-
-
 module.exports = router;

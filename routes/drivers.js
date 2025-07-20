@@ -206,8 +206,6 @@ router.put('/:driverId/location', async (req, res) => {
     }
 });
 
-
-
 router.get('/on-order-status', async (req, res) => {
     try {
         const drivers = await Drivers.find({}, 'firstName lastName onOrder');
@@ -218,7 +216,6 @@ router.get('/on-order-status', async (req, res) => {
     }
 });
 
-// Bir sürücünün onOrder durumunu güncelleyen PUT rotası
 router.put('/:driverId/update-on-order', async (req, res) => {
     const { driverId } = req.params;
     const { onOrder } = req.body;
@@ -243,10 +240,6 @@ router.put('/:driverId/update-on-order', async (req, res) => {
         res.status(500).json({ msg: 'Sunucu hatası', error: error.message });
     }
 });
-
-
-
-
 
 router.get('/:driverId/location', async (req, res) => {
     try {
