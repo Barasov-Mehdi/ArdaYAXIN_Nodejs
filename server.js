@@ -167,7 +167,7 @@ app.get('/find-user-orders', (req, res) => {
     res.render('findUserOrders');
 });
 
-app.get('/privacy-policy', (req, res) => {
+app.get('/aloarda-privacy-policy', (req, res) => {
     const appData = {
         appName: "AloArda",
         lastUpdated: "June 9, 2025",
@@ -176,7 +176,7 @@ app.get('/privacy-policy', (req, res) => {
         minAge: 13,
         companyAddress: "Azerbaijan, City, Country"
     };
-    res.render('privacy-policy', { data: appData });
+    res.render('aloarda-privacy-policy', { data: appData });
 });
 
 app.get('/admin/app-version', async (req, res) => {
