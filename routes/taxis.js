@@ -68,8 +68,6 @@ function getDistanceKm(lat1, lon1, lat2, lon2) {
   return s / 1000; // kilometre
 }
 
-
-
 // Sürücü Seçme
 async function selectBestDriver({ price, orderLat, orderLon, candidateDrivers = null }) {
   let drivers = candidateDrivers;
@@ -187,7 +185,6 @@ async function autoReassignOrder(order) {
   await sendOrderFCMToDriver(nextDriver, order);
 }
 
-
 // Sipariş oluştur
 router.post('/request', async (req, res) => {
   try {
@@ -292,7 +289,6 @@ router.post('/request', async (req, res) => {
   }
 });
 
-
 // Sipariş reddet
 router.post('/orders/:orderId/reject', async (req, res) => {
   try {
@@ -353,7 +349,6 @@ cron.schedule('*/5 * * * * *', async () => {
   }
 });
 
-
 router.get('/requests', async (req, res) => {
   try {
     // Sadece isTaken ve isFinished olmayan siparişleri çekin
@@ -365,20 +360,33 @@ router.get('/requests', async (req, res) => {
   }
 });
 
-router.get('/requests/waiting-driver/count', async (req, res) => {
+router.get('/requests/last-unfinished', async (req, res) => {
   try {
-    const count = await TaxiRequest.countDocuments({
-      status: 'waiting-driver',
-      isTaken: false,
+    // Hem auth middleware yoksa hem de user gönderilmediyse
+    const userId = req.user?._id || req.query.userId || req.body.userId;
+
+    if (!userId) {
+      return res.status(400).json({
+        message: 'Kullanıcı ID bulunamadı (token veya parametre eksik)',
+        code: 'NO_USER_ID'
+      });
+    }
+
+    const latestUnfinishedRequest = await TaxiRequest.findOne({
+      userId,
       isFinished: false
-    });
-    res.json({ count });
-  } catch (e) {
-    console.error('[GET /requests/waiting-driver/count] Hata:', e);
-    res.status(500).json({ message: 'Count hata', error: e.message });
+    }).sort({ createdAt: -1 });
+
+    if (!latestUnfinishedRequest) {
+      return res.status(404).json({ message: 'Aktif bitmemiş sipariş yok.' });
+    }
+
+    return res.status(200).json(latestUnfinishedRequest);
+  } catch (error) {
+    console.error('Error fetching latest unfinished taxi request:', error);
+    return res.status(500).json({ message: 'Sunucu hatası oluştu.' });
   }
 });
-
 
 router.delete('/request', async (req, res) => {
   try {
@@ -397,6 +405,35 @@ router.delete('/request', async (req, res) => {
     res.status(500).json({ message: 'Taksi isteği silinirken bir hata oluştu.' });
   }
 });
+
+router.delete('/cancel-request', async (req, res) => {
+  try {
+    const { requestId } = req.body;
+    if (!requestId) {
+      return res.status(400).json({ message: 'Taksi isteği ID eksik.' });
+    }
+
+    // Önce siparişi bul
+    const existingRequest = await TaxiRequest.findById(requestId);
+    if (!existingRequest) {
+      return res.status(404).json({ message: 'Silinecek taksi isteği bulunamadı.' });
+    }
+
+    // Eğer bu sipariş bir sürücüye atanmışsa onOrder = false yap
+    if (existingRequest.driverId) {
+      await Driver.findByIdAndUpdate(existingRequest.driverId, { onOrder: false });
+    }
+
+    // Siparişi sil
+    await TaxiRequest.findByIdAndDelete(requestId);
+
+    return res.sendStatus(204); // Başarıyla silindi
+  } catch (error) {
+    console.error('Error canceling request:', error);
+    return res.status(500).json({ message: 'Taksi isteği silinirken bir hata oluştu.' });
+  }
+});
+
 
 router.get('/requests/:driverId', async (req, res) => {
   try {
