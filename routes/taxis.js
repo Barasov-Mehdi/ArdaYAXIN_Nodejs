@@ -360,6 +360,18 @@ router.get('/requests', async (req, res) => {
   }
 });
 
+router.get('/requests/waiting-driver/count', async (req, res) => {
+  try {
+    const TaxiRequest = require('../models/taxiRequest');
+    const waitingCount = await TaxiRequest.countDocuments({ status: 'waiting-driver' });
+    res.json({ count: waitingCount });
+  } catch (err) {
+    console.error("waiting-driver/count endpoint hatası:", err);
+    res.status(500).json({ error: 'Sunucu hatası' });
+  }
+});
+
+
 router.get('/requests/last-unfinished', async (req, res) => {
   try {
     // Hem auth middleware yoksa hem de user gönderilmediyse
@@ -433,7 +445,6 @@ router.delete('/cancel-request', async (req, res) => {
     return res.status(500).json({ message: 'Taksi isteği silinirken bir hata oluştu.' });
   }
 });
-
 
 router.get('/requests/:driverId', async (req, res) => {
   try {
