@@ -844,6 +844,9 @@ router.put('/order/:orderId/setAtAddress', async (req, res) => {
   const { atAddress } = req.body;
   const { orderId } = req.params;
 
+  // 1. İstek alındığında loglama
+  console.log(`[setAtAddress] İstek alındı - Sipariş ID: ${orderId}, atAddress değeri: ${atAddress}`);
+
   try {
     const updatedOrder = await TaxiRequest.findByIdAndUpdate(
       orderId,
@@ -852,13 +855,23 @@ router.put('/order/:orderId/setAtAddress', async (req, res) => {
     );
 
     if (!updatedOrder) {
+      // 2. Sipariş bulunamadığında loglama
+      console.log(`[setAtAddress] HATA: Sipariş bulunamadı - ID: ${orderId}`);
       return res.status(404).json({ message: 'Sipariş bulunamadı.' });
     }
 
+    // 3. Sipariş başarıyla güncellendiğinde loglama
+    console.log(`[setAtAddress] Sipariş başarıyla güncellendi. Yeni atAddress: ${updatedOrder.atAddress}`);
+
     if (atAddress === true) {
+      // 4. atAddress true ise kullanıcıyı aramadan önce loglama
+      console.log(`[setAtAddress] atAddress true, müşteriye bildirim gönderme süreci başlatılıyor. Kullanıcı ID: ${updatedOrder.userId}`);
       const user = await User.findById(updatedOrder.userId);
 
       if (user && user.fcmToken) {
+        // 5. Kullanıcı ve FCM tokenı bulunduğunda loglama
+        console.log(`[setAtAddress] Müşteri bulundu: ${user.name}, FCM Token durumu: ${!!user.fcmToken ? 'Var' : 'Yok'}`);
+
         const message = {
           notification: {
             title: `AloArda - ${updatedOrder.driverDetails ? updatedOrder.driverDetails.carPlate : 'ünvanda'}`,
@@ -883,19 +896,33 @@ router.put('/order/:orderId/setAtAddress', async (req, res) => {
           token: user.fcmToken,
         };
 
+        // 6. FCM mesajı göndermeden önce payload'ı loglama
+        console.log(`[setAtAddress] FCM mesajı gönderiliyor. Payload (data kısmı):`, message.data);
+
         try {
-          await customerApp.messaging().send(message); // DEĞİŞİKLİK BURADA
-          console.log(`Müşteriye (${user.name}) 'Sürücü Ünvandadır' bildirimi gönderildi.`);
+          await customerApp.messaging().send(message);
+          // 7. Bildirim başarıyla gönderildiğinde loglama
+          console.log(`[setAtAddress] Müşteriye (${user.name}) 'Sürücü Ünvandadır' bildirimi başarıyla gönderildi.`);
         } catch (notificationError) {
-          console.error('Müşteriye bildirim gönderilirken hata oluştu:', notificationError);
+          // 8. Bildirim gönderilirken hata oluştuğunda hata detayını loglama
+          console.error(`[setAtAddress] Müşteriye bildirim gönderilirken HATA oluştu:`, notificationError);
+          // Hata kodunu ve mesajını daha spesifik olarak gösterelim
+          if (notificationError.code) {
+            console.error(`[setAtAddress] Firebase Bildirim Hatası Kodu: ${notificationError.code}`);
+          }
+          if (notificationError.message) {
+            console.error(`[setAtAddress] Firebase Bildirim Hata Mesajı: ${notificationError.message}`);
+          }
         }
       } else {
-        console.log('Siparişin kullanıcısı bulunamadı veya FCM tokenı yok. Müşteriye bildirim gönderilemedi.');
+        // 9. Kullanıcı bulunamadığında veya FCM tokenı olmadığında loglama
+        console.log(`[setAtAddress] Müşteri bildirimi gönderilemedi: Kullanıcı ID (${updatedOrder.userId}) bulunamadı veya FCM tokenı eksik/geçersiz. Kullanıcı nesnesi var mı: ${!!user}, FCM tokenı var mı: ${!!user?.fcmToken}`);
       }
     }
     res.json(updatedOrder);
   } catch (error) {
-    console.error('Güncellenirken hata oluştu:', error);
+    // 10. Genel bir hata oluştuğunda loglama
+    console.error(`[setAtAddress] Genel işlem sırasında HATA oluştu:`, error);
     res.status(500).json({ message: 'Güncellenirken hata oluştu.' });
   }
 });
@@ -1153,7 +1180,4 @@ router.post('/reassign-order', async (req, res) => {
     return res.status(500).json({ message: 'Sunucu hatası oluştu.', error: error.message });
   }
 });
-
-
-
 module.exports = router;
