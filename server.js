@@ -178,7 +178,7 @@ app.get('/aloarda-privacy-policy', (req, res) => {
     };
     res.render('aloarda-privacy-policy', { data: appData });
 });
-
+ 
 app.get('/admin/app-version', async (req, res) => {
     try {
         res.render('appversion');
