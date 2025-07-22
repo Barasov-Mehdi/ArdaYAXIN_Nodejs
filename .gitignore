@@ -1,5 +1,6 @@
 # Özel dosyalar
 serviceAccountKey.json
+customer_serviceAccountKey.json
 .env
 
 # Bağımlılıklar
