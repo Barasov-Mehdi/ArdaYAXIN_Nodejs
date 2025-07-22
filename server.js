@@ -16,8 +16,6 @@ const ReassignedOrder = require('./models/ReassignedOrder');
 let driverServiceAccount;
 let customerServiceAccount;
 
-// Sürücü projesi için servis hesabı anahtarını yükle
-// Ortam değişkeni GOOGLE_APPLICATION_CREDENTIALS olarak belirtilmiş
 if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY) { // Heroku gibi ortamlar için
     driverServiceAccount = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY);
 } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) { // Lokal ortam için
@@ -35,8 +33,6 @@ if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY) { // Heroku gibi ortamlar için
     console.error("Sürücü Firebase kimlik bilgileri ortam değişkenlerinde bulunamadı. GOOGLE_SERVICE_ACCOUNT_KEY veya GOOGLE_APPLICATION_CREDENTIALS ayarını kontrol edin.");
 }
 
-// Müşteri projesi için servis hesabı anahtarını yükle
-// Ortam değişkeni CUSTOMER_GOOGLE_APPLICATION_CREDENTIALS olarak belirtilmiş
 if (process.env.CUSTOMER_GOOGLE_SERVICE_ACCOUNT_KEY) { // Heroku gibi ortamlar için
     customerServiceAccount = JSON.parse(process.env.CUSTOMER_GOOGLE_SERVICE_ACCOUNT_KEY);
 } else if (process.env.CUSTOMER_GOOGLE_APPLICATION_CREDENTIALS) { // Lokal ortam için
@@ -60,7 +56,6 @@ let driverApp, customerApp;
 if (driverServiceAccount) {
     driverApp = admin.initializeApp({
         credential: admin.credential.cert(driverServiceAccount)
-        // Diğer Firebase yapılandırmalarınız buraya gelebilir (örn. databaseURL)
     }, 'driverApp'); // Sürücü uygulaması için benzersiz isim
     console.log("Sürücü Firebase Admin SDK başarıyla başlatıldı.");
 } else {
@@ -70,22 +65,16 @@ if (driverServiceAccount) {
 if (customerServiceAccount) {
     customerApp = admin.initializeApp({
         credential: admin.credential.cert(customerServiceAccount)
-        // Diğer Firebase yapılandırmalarınız buraya gelebilir (örn. databaseURL)
     }, 'customerApp'); // Müşteri uygulaması için benzersiz isim
     console.log("Müşteri Firebase Admin SDK başarıyla başlatıldı.");
 } else {
     console.error("Müşteri Firebase Admin SDK başlatılamadı. Kimlik bilgilerinizi kontrol edin.");
 }
 
-// driverApp ve customerApp'i diğer router dosyaları tarafından erişilebilir hale getirin
-// Bu, routes/taxis.js dosyasında bunları kullanmak için önemlidir.
 module.exports.driverApp = driverApp;
 module.exports.customerApp = customerApp;
 
 // --- Firebase Uygulamaları Başlatma Sonu ---
-
-// connectDB, app.set, app.use ve tüm router tanımlamaları (app.get, app.use) burada devam eder.
-// ... (geri kalan server.js kodunuz aynı kalır) ...
 
 connectDB();
 app.set('view engine', 'ejs');
@@ -178,7 +167,7 @@ app.get('/aloarda-privacy-policy', (req, res) => {
     };
     res.render('aloarda-privacy-policy', { data: appData });
 });
- 
+
 app.get('/admin/app-version', async (req, res) => {
     try {
         res.render('appversion');
