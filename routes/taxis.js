@@ -662,7 +662,7 @@ router.post('/takeOrder', async (req, res) => {
         const message = {
           notification: {
             title: 'AloArda',
-            body: `Siparişiniz sürücü tarafından alındı!`,
+            body: `Sifarişi sürücü qəbul etdi!`,
           },
           data: {
             requestId: taxiRequest._id.toString(),
