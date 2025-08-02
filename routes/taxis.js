@@ -136,7 +136,7 @@ async function autoReassignOrder(order) {
 
   const now = Date.now();
   const last = order.lastAssignedAt ? order.lastAssignedAt.getTime() : 0;
-  if (now - last < 16_000) return; // 10 saniye dolmamışsa çık
+  if (now - last < 18_000) return; // 10 saniye dolmamışsa çık
 
   // Eski sürücüyü boşalt
   if (order.driverId) {
@@ -327,7 +327,7 @@ cron.schedule('*/5 * * * * *', async () => {
   console.log('[CRON] Auto-reassign taraması başladı:', startedAt.toISOString());
 
   try {
-    const threshold = new Date(Date.now() - 16_000); // 10 sn önce
+    const threshold = new Date(Date.now() - 18_000); // 10 sn önce
     const staleOrders = await TaxiRequest.find({
       isTaken: false,
       isFinished: { $ne: true },
@@ -662,7 +662,7 @@ router.post('/takeOrder', async (req, res) => {
         const message = {
           notification: {
             title: 'AloArda',
-            body: `Siparişiniz sürücü tarafından alındı!`,
+            body: `Sifarişi sürücü qəbul etdi!`,
           },
           data: {
             requestId: taxiRequest._id.toString(),
