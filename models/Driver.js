@@ -1,6 +1,6 @@
-const mongoose = require('mongoose');
+//const mongoose = require('mongoose');
 
-const DriversSchema = new mongoose.Schema({
+//const DriversSchema = new mongoose.Schema({
     firstName: {
         type: String,
         required: true,
