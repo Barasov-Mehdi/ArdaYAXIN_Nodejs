@@ -2,7 +2,6 @@
 serviceAccountKey.json
 customer_serviceAccountKey.json
 .env
-Config Vars Alo Arda NodeJs.txt
 
 # Bağımlılıklar
 node_modules/
