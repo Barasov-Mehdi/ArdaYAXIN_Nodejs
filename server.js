@@ -5,76 +5,98 @@ const app = express();
 const path = require('path');
 require('dotenv').config();
 const admin = require('firebase-admin');
-const fs = require('fs'); // fs modülünü ekleyin
-const cron = require('node-cron');
+const fs = require('fs');
+
+// Vercel'de sürekli çalışan bir görev başlatılamaz.
+// Eğer cron'u kullanmanız gerekiyorsa, bunu Vercel'in kendi Cron Jobs özelliği veya harici bir servis ile yapmalısınız.
+// const cron = require('node-cron'); // Devre dışı bırakıldı/Kaldırıldı
+
 const Drivers = require('./models/Driver');
 const CanceledOrder = require('./models/CanceledOrder');
 const ReassignedOrder = require('./models/ReassignedOrder');
 
 
 // --- Firebase Uygulamalarını Başlatma ---
+// Vercel ortamında yalnızca Ortam Değişkeni (Environment Variable) üzerinden yüklemeye odaklanın.
 let driverServiceAccount;
 let customerServiceAccount;
 
-if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY) { // Heroku gibi ortamlar için
-    driverServiceAccount = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY);
-} else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) { // Lokal ortam için
+// Sürücü Hesabı Kimlik Bilgileri
+if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY) {
     try {
-        const filePath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-        if (fs.existsSync(filePath)) {
-            driverServiceAccount = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-        } else {
-            console.error(`Hata: Sürücü serviceAccountKey.json dosyası bulunamadı: ${filePath}. Lütfen .env'deki GOOGLE_APPLICATION_CREDENTIALS yolunu kontrol edin.`);
-        }
-    } catch (error) {
-        console.error("GOOGLE_APPLICATION_CREDENTIALS'dan sürücü anahtarı yüklenirken hata oluştu:", error);
+        // Vercel'de JSON string olarak gelen anahtarı kullan
+        driverServiceAccount = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY);
+    } catch (e) {
+        console.error("Hata: GOOGLE_SERVICE_ACCOUNT_KEY JSON formatında değil.");
     }
 } else {
-    console.error("Sürücü Firebase kimlik bilgileri ortam değişkenlerinde bulunamadı. GOOGLE_SERVICE_ACCOUNT_KEY veya GOOGLE_APPLICATION_CREDENTIALS ayarını kontrol edin.");
+    // Lokal dosya okuma, sadece yerel geliştirme için korunur. Vercel'de bu kısım çalışmayacaktır.
+    const localPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+    if (localPath && fs.existsSync(localPath)) {
+         driverServiceAccount = JSON.parse(fs.readFileSync(localPath, 'utf8'));
+    } else if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
+        console.error("Sürücü Firebase kimlik bilgileri Ortam Değişkenlerinde bulunamadı. Lütfen Vercel'deki GOOGLE_SERVICE_ACCOUNT_KEY ayarını kontrol edin.");
+    }
 }
 
-if (process.env.CUSTOMER_GOOGLE_SERVICE_ACCOUNT_KEY) { // Heroku gibi ortamlar için
-    customerServiceAccount = JSON.parse(process.env.CUSTOMER_GOOGLE_SERVICE_ACCOUNT_KEY);
-} else if (process.env.CUSTOMER_GOOGLE_APPLICATION_CREDENTIALS) { // Lokal ortam için
+// Müşteri Hesabı Kimlik Bilgileri
+if (process.env.CUSTOMER_GOOGLE_SERVICE_ACCOUNT_KEY) {
     try {
-        const filePath = process.env.CUSTOMER_GOOGLE_APPLICATION_CREDENTIALS;
-        if (fs.existsSync(filePath)) {
-            customerServiceAccount = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-        } else {
-            console.error(`Hata: Müşteri customer_serviceAccountKey.json dosyası bulunamadı: ${filePath}. Lütfen .env'deki CUSTOMER_GOOGLE_APPLICATION_CREDENTIALS yolunu kontrol edin.`);
-        }
-    } catch (error) {
-        console.error("CUSTOMER_GOOGLE_APPLICATION_CREDENTIALS'dan müşteri anahtarı yüklenirken hata oluştu:", error);
+        // Vercel'de JSON string olarak gelen anahtarı kullan
+        customerServiceAccount = JSON.parse(process.env.CUSTOMER_GOOGLE_SERVICE_ACCOUNT_KEY);
+    } catch (e) {
+        console.error("Hata: CUSTOMER_GOOGLE_SERVICE_ACCOUNT_KEY JSON formatında değil.");
     }
 } else {
-    console.error("Müşteri Firebase kimlik bilgileri ortam değişkenlerinde bulunamadı. CUSTOMER_GOOGLE_SERVICE_ACCOUNT_KEY veya CUSTOMER_GOOGLE_APPLICATION_CREDENTIALS ayarını kontrol edin.");
+    // Lokal dosya okuma, sadece yerel geliştirme için korunur. Vercel'de bu kısım çalışmayacaktır.
+    const localPath = process.env.CUSTOMER_GOOGLE_APPLICATION_CREDENTIALS;
+    if (localPath && fs.existsSync(localPath)) {
+        customerServiceAccount = JSON.parse(fs.readFileSync(localPath, 'utf8'));
+    } else if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
+        console.error("Müşteri Firebase kimlik bilgileri Ortam Değişkenlerinde bulunamadı. Lütfen Vercel'deki CUSTOMER_GOOGLE_SERVICE_ACCOUNT_KEY ayarını kontrol edin.");
+    }
 }
 
-// Firebase Admin SDK'yı her iki proje için de başlatın
+// Firebase Admin SDK'yı her iki proje için de başlatın (Sadece başlatılmadıysa)
 let driverApp, customerApp;
 
 if (driverServiceAccount) {
-    driverApp = admin.initializeApp({
-        credential: admin.credential.cert(driverServiceAccount)
-    }, 'driverApp'); // Sürücü uygulaması için benzersiz isim
-    console.log("Sürücü Firebase Admin SDK başarıyla başlatıldı.");
+    try {
+        driverApp = admin.app('driverApp'); // Zaten başlatıldıysa mevcut uygulamayı al
+    } catch (e) {
+        // Başlatılmadıysa başlat
+        driverApp = admin.initializeApp({
+            credential: admin.credential.cert(driverServiceAccount)
+        }, 'driverApp');
+        console.log("Sürücü Firebase Admin SDK başarıyla başlatıldı.");
+    }
 } else {
     console.error("Sürücü Firebase Admin SDK başlatılamadı. Kimlik bilgilerinizi kontrol edin.");
 }
 
 if (customerServiceAccount) {
-    customerApp = admin.initializeApp({
-        credential: admin.credential.cert(customerServiceAccount)
-    }, 'customerApp'); // Müşteri uygulaması için benzersiz isim
-    console.log("Müşteri Firebase Admin SDK başarıyla başlatıldı.");
+    try {
+        customerApp = admin.app('customerApp'); // Zaten başlatıldıysa mevcut uygulamayı al
+    } catch (e) {
+        // Başlatılmadıysa başlat
+        customerApp = admin.initializeApp({
+            credential: admin.credential.cert(customerServiceAccount)
+        }, 'customerApp');
+        console.log("Müşteri Firebase Admin SDK başarıyla başlatıldı.");
+    }
 } else {
     console.error("Müşteri Firebase Admin SDK başlatılamadı. Kimlik bilgilerinizi kontrol edin.");
 }
 
+
+// Firebase uygulamalarını modül dışına aktar
 module.exports.driverApp = driverApp;
 module.exports.customerApp = customerApp;
 
-connectDB();
+// MongoDB bağlantısı (Her istek geldiğinde çağrılmaz, ilk fonksiyon başlatıldığında çalışır)
+connectDB(); 
+
+// Express Ayarları ve Middleware'ler
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
@@ -91,6 +113,7 @@ app.use((req, res, next) => {
     next();
 });
 
+// Route Tanımlamaları
 const indexRouter = require('./routes/index');
 app.use('/', indexRouter);
 
@@ -200,5 +223,6 @@ app.use('/api/coordinates', require('./routes/cordinatsRoutes'));
 app.use('/api/pricetiers', require('./routes/pricetiers'));
 app.use('/api/app-version', require('./routes/appVersionRoutes'));
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+// 🛑 KRİTİK DÜZELTME: app.listen() kaldırıldı ve Express uygulaması dışa aktarıldı.
+// Vercel bu dışa aktarılmış 'app' objesini kullanarak gelen istekleri işler.
+module.exports = app;
