@@ -1,16 +1,15 @@
-require('dotenv').config();
 const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URL, {
+    const conn = await mongoose.connect(process.env.MONGODB_URL, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
 
-    console.log('MongoDB Connected...');
-  } catch (err) {
-    console.error(err.message);
+    console.log(`MongoDB bağlandı: ${conn.connection.host}`);
+  } catch (error) {
+    console.error(`MongoDB bağlantı hatası: ${error.message}`);
     process.exit(1);
   }
 };
