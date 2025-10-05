@@ -33,7 +33,7 @@ if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY) {
     // Lokal dosya okuma, sadece yerel geliştirme için korunur. Vercel'de bu kısım çalışmayacaktır.
     const localPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
     if (localPath && fs.existsSync(localPath)) {
-         driverServiceAccount = JSON.parse(fs.readFileSync(localPath, 'utf8'));
+        driverServiceAccount = JSON.parse(fs.readFileSync(localPath, 'utf8'));
     } else if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
         console.error("Sürücü Firebase kimlik bilgileri Ortam Değişkenlerinde bulunamadı. Lütfen Vercel'deki GOOGLE_SERVICE_ACCOUNT_KEY ayarını kontrol edin.");
     }
@@ -94,7 +94,7 @@ module.exports.driverApp = driverApp;
 module.exports.customerApp = customerApp;
 
 // MongoDB bağlantısı (Her istek geldiğinde çağrılmaz, ilk fonksiyon başlatıldığında çalışır)
-connectDB(); 
+connectDB();
 
 // Express Ayarları ve Middleware'ler
 app.set('view engine', 'ejs');
@@ -225,4 +225,13 @@ app.use('/api/app-version', require('./routes/appVersionRoutes'));
 
 // 🛑 KRİTİK DÜZELTME: app.listen() kaldırıldı ve Express uygulaması dışa aktarıldı.
 // Vercel bu dışa aktarılmış 'app' objesini kullanarak gelen istekleri işler.
+
+// --- En alta ekle ---
+// if (require.main === module) {
+//     const PORT = process.env.PORT || 3000;
+//     app.listen(PORT, () => {
+//         console.log(`🚀 Server is running on http://localhost:${PORT}`);
+//     });
+// }
+
 module.exports = app;
