@@ -93,6 +93,25 @@ router.get('/:id/current-location', async (req, res) => {
     }
 });
 
+// ID ile eşleşen sürücüyü getir
+router.get('/ideslesensofor/:id', async (req, res) => {
+    try {
+        const driverId = req.params.id;
+
+        // MongoDB'de id'ye göre sürücüyü bul
+        const driver = await Drivers.findById(driverId).select('firstName lastName');
+        if (!driver) {
+            return res.status(404).json({ message: 'Sürücü tapılmadı.' });
+        }
+
+        res.json(driver);
+    } catch (error) {
+        console.error('Sürücü gətirilərkən xəta:', error);
+        res.status(500).json({ message: 'Sunucu xətası.' });
+    }
+});
+
+
 router.post('/updateLocation', async (req, res) => {
     try {
         const { driverId, coordinates } = req.body;
