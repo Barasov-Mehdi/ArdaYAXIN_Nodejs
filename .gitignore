@@ -4,7 +4,6 @@ customer_serviceAccountKey.json
 .env
 *.txt
 *.key
-*.json
 # Bağımlılıklar
 node_modules/
 customer_serviceAccountKey.json
