@@ -903,7 +903,7 @@
                 clearInterval(window.ordersRefreshInterval);
             }
             await fetchOrders();
-            window.ordersRefreshInterval = setInterval(fetchOrders, 15000);
+            window.ordersRefreshInterval = setInterval(fetchOrders, 4500);
         });
 
         document.addEventListener('DOMContentLoaded', () => {
