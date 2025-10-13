@@ -398,8 +398,26 @@
             transition: background-color 0.3s ease;
         }
 
+        .ustunde {
+            color: var(--info-color);
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-align: center;
+            width: 100%;
+        }
+
         .top-link:hover {
             background-color: var(--accent-color);
+        }
+
+        .ustundebox {
+            background-color: var(--card-bg);
+            padding: 5px 10px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-light);
+            border: 1px solid white;
+            z-index: 1000;
+            margin: 10px 0; 
         }
 
         /* Media Queries - Responsive Tasarım */
@@ -644,9 +662,11 @@
         currentAddressInput.addEventListener('input', () =>
             filterAndDisplayResults(currentAddressInput, currentAddressResultsList, currentAddressLatitudeInput, currentAddressLongitudeInput)
         );
+
         destinationAddressInput.addEventListener('input', () =>
             filterAndDisplayResults(destinationAddressInput, destinationAddressResultsList, destinationAddressLatitudeInput, destinationAddressLongitudeInput)
         );
+
         destination2Input.addEventListener('input', () =>
             filterAndDisplayResults(destination2Input, destination2ResultsList, destination2LatitudeInput, destination2LongitudeInput)
         );
@@ -731,6 +751,8 @@
 
         fetchAllCoordinates();
 
+        // bu zorudu
+
         function renderOrderCard(order) {
             const ordersContainer = document.getElementById('ordersContainer');
             let orderCard = document.getElementById(`order-card-${order._id}`);
@@ -751,57 +773,83 @@
                 '<div class="status-circle takedCustumorNot"><i class="fas fa-times"></i></div>';
 
             if (order.atAddress && !window.playedSoundOrders.has(order._id)) {
-                const audio = new Audio('/assets/successfully-done-complete-sound-6-SBA-300462024-preview.mp3'); // Update path if needed
-                audio.play().catch((e) => {
-                    console.warn("Ses otomatik oynatılamadı (atAddress):", e);
-                });
+                const audio = new Audio('/assets/successfully-done-complete-sound-6-SBA-300462024-preview.mp3');
+                audio.play().catch((e) => console.warn("Ses otomatik oynatılamadı (atAddress):", e));
                 window.playedSoundOrders.add(order._id);
             }
             if (order.takenCustomer && !window.playedSoundOrders.has(`${order._id}_takenCustomer_sound`)) {
-                const audio = new Audio('/assets/elgun_ses.mp3'); // Update path if needed
-                audio.play().catch((e) => {
-                    console.warn("Ses otomatik oynatılamadı (takenCustomer):", e);
-                });
+                const audio = new Audio('/assets/elgun_ses.mp3');
+                audio.play().catch((e) => console.warn("Ses otomatik oynatılamadı (takenCustomer):", e));
                 window.playedSoundOrders.add(`${order._id}_takenCustomer_sound`);
             }
 
-            const driverInfo = (order.isTaken || order.isFinished || order.isConfirmed) && order.driverDetails ? `
-                <p><strong>Sürücü Adı:</strong> ${order.driverDetails.firstName || 'Bilinmir'}</p>
-                <p><strong>Maşın No:</strong> ${order.driverDetails.carPlate || 'Bilinmir'}</p>
-                <p><strong>Müddət:</strong> ${order.time != null ? order.time + ' Dəqiqə' : 'Bilinmir'}</p>
-            ` : `<p><strong>Sürücü:</strong> Təyin olunmayıb</p>`;
-
+            // Kartın HTML yapısı
             const orderHtml = `
-                <p><strong>Müştəri:</strong> ${order.currentAddress.text}</p>
-                <p><strong>Təyinat 1:</strong> ${order.destinationAddress.text}</p>
-                <p><strong>Təyinat 2:</strong> ${order.destination2 && order.destination2.text ? order.destination2.text : 'Yoxdur'}</p>
-                <p><strong>Qiymət:</strong> ${order.price != null ? order.price.toFixed(2) + ' ₼' : 'Müəyyən deyil'}</p>
-                <p><strong>Telefon:</strong> ${order.tel || 'Yoxdur'}</p>
-                 
-                ${driverInfo}
-                <div class="status-indicators">
-                    <div class="status-box">${atAddressBox}<span>Ünvanda</span></div>
-                    <div class="status-box">${takedCustumorBox}<span>Müştəri Alındı</span></div>
-                </div>
-                <div class="buttons">
-                    <button class="sil" onclick="sil('${order._id}')"><i class="fas fa-times-circle"></i> Ləğv Et</button>
+        <p class="surucuBasta"><strong>Müştəri:</strong> ${order.currentAddress.text}</p>
+        <p><strong>Təyinat 1:</strong> ${order.destinationAddress.text}</p>
+        <p><strong>Təyinat 2:</strong> ${order.destination2 && order.destination2.text ? order.destination2.text : 'Yoxdur'}</p>
+        <p class="price"><strong>Qiymət:</strong> ${order.price != null ? order.price.toFixed(2) + ' ₼' : 'Müəyyən deyil'}</p>
+        <p><strong>Telefon:</strong> ${order.tel || 'Yoxdur'}</p>
 
-                   <button class="finish-order" onclick="finishOrder('${order._id}', ${order.price})"><i class="fas fa-flag-checkered"></i> Bitir</button>
-                    </div>
-                    `;
-        //   <button class="durum" onclick="yenile('${order._id}')"><i class="fas fa-exchange-alt"></i> Obşiyə At</button>
- 
+        <div class="status-indicators">
+            <div class="status-box">${atAddressBox}<span>Ünvanda</span></div>
+            <div class="status-box">${takedCustumorBox}<span>Müştəri Alındı</span></div>
+        </div>
+        <div class="buttons">
+            <button class="sil" onclick="sil('${order._id}')"><i class="fas fa-times-circle"></i> Ləğv Et</button>
+            <button class="finish-order" onclick="finishOrder('${order._id}', ${order.price})"><i class="fas fa-flag-checkered"></i> Bitir</button>
+        </div>
+    `;
+
             if (orderCard) {
-                // Update existing card
+                // Var olan kartı güncelle
                 orderCard.innerHTML = orderHtml;
             } else {
-                // Create new card
+                // Yeni kart oluştur
                 orderCard = document.createElement('div');
                 orderCard.className = 'siparis';
                 orderCard.id = `order-card-${order._id}`;
                 orderCard.innerHTML = orderHtml;
                 ordersContainer.appendChild(orderCard);
             }
+
+            // Eğer driverDetails boşsa ama driverId varsa, API'den sürücü bilgisi getir ve fiyatın altına ekle
+            if ((!order.driverDetails || Object.keys(order.driverDetails).length === 0) && order.driverId) {
+                fetch(`/api/drivers/ideslesensofor/${order.driverId}`)
+                    .then(res => res.json())
+                    .then(driver => {
+                        if (driver && driver.firstName) {
+                            const priceElement = orderCard.querySelector('.price');
+                            const driverHtml = `
+                        <div class="dynamic-driver ustundebox">
+                            <p class="ustunde"><strong>${driver.firstName} ${driver.lastName}'in Üstündə</strong></p>
+                        </div>
+                    `;
+                            if (priceElement) {
+                                priceElement.insertAdjacentHTML('afterend', driverHtml);
+                            } else {
+                                orderCard.insertAdjacentHTML('beforeend', driverHtml);
+                            }
+                        }
+                    })
+                    .catch(err => console.error('Sürücü məlumatı gətirilərkən xəta:', err));
+            } else if (order.driverDetails && Object.keys(order.driverDetails).length > 0) {
+                // Eğer driverDetails zaten varsa, onları da göster
+                const priceElement = orderCard.querySelector('.price');
+                const driverHtml = `
+            <div class="dynamic-driver">
+                <p><strong>Sürücü Adı:</strong> ${order.driverDetails.firstName || 'Bilinmir'}</p>
+                <p><strong>Maşın No:</strong> ${order.driverDetails.carPlate || 'Bilinmir'}</p>
+                <p><strong>Müddət:</strong> ${order.time != null ? order.time + ' Dəqiqə' : 'Bilinmir'}</p>
+            </div>
+        `;
+                if (priceElement) {
+                    priceElement.insertAdjacentHTML('afterend', driverHtml);
+                } else {
+                    orderCard.insertAdjacentHTML('beforeend', driverHtml);
+                }
+            }
+
             currentOrders[order._id] = order;
         }
 
@@ -855,7 +903,7 @@
                 clearInterval(window.ordersRefreshInterval);
             }
             await fetchOrders();
-            window.ordersRefreshInterval = setInterval(fetchOrders, 1000);
+            window.ordersRefreshInterval = setInterval(fetchOrders, 15000);
         });
 
         document.addEventListener('DOMContentLoaded', () => {
