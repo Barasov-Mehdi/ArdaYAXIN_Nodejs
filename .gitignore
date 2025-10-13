@@ -8,3 +8,5 @@ customer_serviceAccountKey.json
 # Bağımlılıklar
 node_modules/
 customer_serviceAccountKey.json
+# İstisnalar
+!vercel.json  👈 BU SATIRI EKLEYİN

@@ -94,28 +94,23 @@ router.get('/:id/current-location', async (req, res) => {
 });
 
 // ID ile eşleşen sürücüyü getir
-// routes/drivers.js
 router.get('/ideslesensofor/:id', async (req, res) => {
-    const driverId = req.params.id;
-    console.log(`[VERCEL DEBUG] 'ideslesensofor' rotasına istek geldi. ID: ${driverId}`); // 👈 BU SATIRI EKLEYİN
-
     try {
-        // ... (diğer kodlar)
+        const driverId = req.params.id;
+
+        // MongoDB'de id'ye göre sürücüyü bul
         const driver = await Drivers.findById(driverId).select('firstName lastName');
-
-        console.log(`[VERCEL DEBUG] Sürücü veritabanından getirildi:`, driver); // 👈 BU SATIRI DA EKLEYİN
-
         if (!driver) {
-            console.log(`[VERCEL DEBUG] ID ${driverId} için sürücü tapılmadı (404)`);
             return res.status(404).json({ message: 'Sürücü tapılmadı.' });
         }
 
         res.json(driver);
     } catch (error) {
-        console.error('[VERCEL DEBUG] Sürücü gətirilərkən KRİTİK XƏTA:', error);
+        console.error('Sürücü gətirilərkən xəta:', error);
         res.status(500).json({ message: 'Sunucu xətası.' });
     }
 });
+
 
 router.post('/updateLocation', async (req, res) => {
     try {
