@@ -1,6 +1,0 @@
-yeni atlas mongodb+srv://asker20tr:U5nLuygpTzq3dV7m@cluster0.8lwg7uz.mongodb.net/
-yeni heroku mongodb+srv://asker20tr:U5nLuygpTzq3dV7m@cluster0.8lwg7uz.mongodb.net/aloarda?retryWrites=true&w=majority&appName=Cluster0
-
-kohne atlas mongodb+srv://barasovmehdii:barasbaras..@cluster0.amv5esq.mongodb.net/
-kohne heroku mongodb+srv://barasovmehdii:barasbaras..@cluster0.amv5esq.mongodb.net/aloarda?retryWrites=true&w=majority&appName=Cluster0
-
